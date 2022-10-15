@@ -1,0 +1,137 @@
+---
+
+sidebar_label: '[Observer] React state management library'
+tags:
+  - React
+  - Observer Pattern
+
+---
+
+Observer Pattern 的其中一種應用，**React state management library**
+
+當需求方有較大量的需求，供給方無法常常給予有效的回應時，<br />
+這時，供給方成為主動方，當真的有辦法給於有效回饋時才通知，以避免較大量需求方常常得不到想要的回饋<br />
+這就是 **觀察者模式 Observer Pattern**
+
+## React state 問題
+
+### 問題 1：太多重複的 state
+例如每一頁都需要知道使用者的資訊，若每一頁都需要重新取得使用者資訊，<br />
+就需要每一個有一個 `userInfo` 的 state
+
+造成
+1. 重複的 `userInfo`
+2. 可能每一頁的 `userInfo` 狀態都不一樣
+
+<br />
+
+:::info Solution
+我們可以把 `userInfo` 放在最上層的 Component 統一處理，利用 props 的方式傳下來
+:::
+
+<br />
+
+
+### 問題 2：統一 state 在最上層會 props-drilling
+
+當我們把共用的 state 統一在最上層時，如果 Component 是在底下好幾層， <br />
+中間的 Component 都會需要將 prop 傳下去，造成嚴重的 props-drilling
+
+:::info Solution
+
+我們可以透過 Context API 來解決這個問題
+
+:::
+
+<br />
+
+
+
+### 問題 3：re-render 問題
+
+雖然 Context API 可以解決 props-drilling 的問題，但 Context 裡的值更新時，最上層的 Component 會 re-render <br />
+造成所有的 Children 也一起 re-render
+
+:::info Solution
+
+我們可以將狀態庫 (state store) 放在外面，當 state 有改變時，<br />
+相關的 Component 才會 re-render，這就是 state management library 的概念
+
+:::
+
+<br />
+
+## Observer 簡易實現
+
+### 角色 & 任務 
+
+Publisher：通知方
+
+Subscriber：接收方
+
+example : 一群無人機 & 一個控制中心
+
+```tsx title="commander.ts"
+const createCommander = () => {
+  // a space to store all state
+  const info = {
+    direciton: 'north',
+    velocity: 10,
+  }
+
+  // a spece to store all drones (subscribers)
+  type Drone = (newInfo: typeof info) => void;
+
+  const drones: Array<Drone> = [];
+
+  // api to add drone (subscriber)
+  const invite = (newDrone: Drone) => {
+    drones.push(newDrone);
+  }
+
+  // api to notify all drones (subscribers)
+  const notifyAllWith = (newInfo: typeof info) => {
+    for (const drone of drones) {
+      drone(newInfo);
+    }
+  }
+}
+```
+
+<br />
+
+```tsx title="index.ts"
+const commander = createCommander();
+
+const drone1 = (newInfo) => console.log('Drone 1 got new info : ', newInfo);
+const drone1 = (newInfo) => console.log('Drone 2 got new info : ', newInfo);
+
+commander.invite(drone1);
+commander.invite(drone2);
+
+const newInfo = {
+  direction: 'south',
+  velocity: 10,
+}
+
+commander.notifyAllWith(newInfo);
+// Drone 1 got new info :  { direction: 'south', velocity: 10 }
+// Drone 2 got new info :  { direction: 'south', velocity: 10 }
+
+```
+
+<br />
+
+### 進階應用：Selector
+
+
+## Observer Pattern 在 state management library 的應用
+
+### Store
+
+
+我們有一地方儲存 & 管理所有的狀態，當狀態有變更時，我們希望所有的 Component 都會知道， <br />
+此時， 儲存狀態的地方就是 "Publisher" ，所有的 Component 就是 "Subscriber"， <br />
+Subscriber 會決定要不要加入 Publisher 的行列，這樣當 Publisher 有變更或消息時， Subscriber 會第一時間知道 <br />
+
+舉以下例子來說： Drone 
