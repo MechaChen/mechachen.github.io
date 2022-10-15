@@ -1,0 +1,22 @@
+---
+
+sidebar_label: '[RTL] Why 使用 React Testing Library?'
+tags:
+  - Implementation
+  - React Testing Library 
+
+---
+
+# [RTL] Why 使用 React Testing Library?
+
+:::note 前情提要
+在 React Testing Library 出現前，已經有一個叫做 Enzyme 的測試工具，主打的特色是 Shallow rendering，<br />
+只幫你 render 一層 component，不會 render 內部，
+看似幫我們更容易做 unit test，但實際上會有很多問題
+:::
+
+
+## Why `shallow rendering` is bad?
+
+1. shallow render 不會真的渲染內部的 component，與實際 user 所見不同
+2. 
