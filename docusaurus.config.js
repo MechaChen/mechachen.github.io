@@ -14,7 +14,7 @@ const config = {
   onBrokenMarkdownLinks: 'warn',
   trailingSlash: false,
   favicon: 'img/whale.png',
-  deploymentBranch: 'master',
+  deploymentBranch: 'gh-pages',
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'MechaChen', // Usually your GitHub org/user name.
@@ -25,7 +25,7 @@ const config = {
   // to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'zh-tw'],
   },
 
   presets: [

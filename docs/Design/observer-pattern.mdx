@@ -1,19 +1,23 @@
 ---
 
 sidebar_label: '[Observer] React state management library'
+title: '[Observer] React state management library'
 tags:
   - React
   - Observer Pattern
 
 ---
 
+> [How to write your own state management library](https://judehunter.dev/blog/how-to-write-your-own-state-management-library) @ Reddits/reactjs
+
+## Core concept
 Observer Pattern 的其中一種應用，**React state management library**
 
-當需求方有較大量的需求，供給方無法常常給予有效的回應時，<br />
+當需求方有較大量的需求，供給方無法常常給予有效的回應時，(例如回應都跟上次一模一樣)<br />
 這時，供給方成為主動方，當真的有辦法給於有效回饋時才通知，以避免較大量需求方常常得不到想要的回饋<br />
 這就是 **觀察者模式 Observer Pattern**
 
-## React state 問題
+## React state 問題 & state management library 的出現
 
 ### 問題 1：太多重複的 state
 例如每一頁都需要知道使用者的資訊，若每一頁都需要重新取得使用者資訊，<br />
@@ -65,16 +69,16 @@ Observer Pattern 的其中一種應用，**React state management library**
 
 ### 角色 & 任務 
 
-Publisher：通知方
+Publisher：通知方，當訊息一有變更時，主動通知新訊息的一方
 
-Subscriber：接收方
+Subscriber：接收方，當有新訊息時，立即被動接收的一方
 
 example : 一群無人機 & 一個控制中心
 
 ```tsx title="commander.ts"
 const createCommander = () => {
   // a space to store all state
-  const info = {
+  let info = {
     direciton: 'north',
     velocity: 10,
   }
@@ -94,6 +98,8 @@ const createCommander = () => {
     for (const drone of drones) {
       drone(newInfo);
     }
+
+    info = newInfo;
   }
 }
 ```
@@ -123,6 +129,96 @@ commander.notifyAllWith(newInfo);
 <br />
 
 ### 進階應用：Selector
+當我們只想監聽特定的 state 時，就可以加入 selector，選擇我們要監聽的狀態，<br />
+例如當無人機在特定環境，只能以低速飛行時，只想要監聽控制台的方向，就可以加入選擇器
+
+```tsx title=selectableCommander.ts
+const createCommander = () => {
+  // create a space to store info
+  let info = {
+    direction: 'north',
+    velocity: 10,
+  }
+
+  // create a space to store all drones
+  type Selector = keyof typeof info;
+  type DroneCb = (newInfo: typeof info) => void;
+
+  type Drone = [
+    selector: Selector, 
+    droneCb: DroneCb
+  ];
+
+  const drones: Array<Drone> = [];
+
+  // create an api to add drone
+  const invite = (newDrone: Drone) => {
+    drones.push(newDrone);
+  }
+
+  // create an api to notify all drones 
+  const notifyAllWith = (newInfo: typeof info) => {
+    for (const [selector, droneCb] of drones) {
+      if (
+        selector === 'direction' &&           // when drone's selector is direction & 
+        newInfo.direction !== info.direction  // direction value changed
+      ) {
+        droneCb(newInfo);
+      }
+
+      else if (
+        selector === 'velocity' &&          // when drone's selector is velocity
+        newInfo.velocity !== info.velocity  // & veloctiy value changed
+      ) {
+        droneCb(newInfo);
+      }
+    }
+
+    // update info
+    info = newInfo;
+  }
+
+  return { invite, notifyAllWith };
+}
+
+export default createCommander;
+```
+
+```tsx title=index.ts
+const commander = createCommander();
+
+const drone1 = [
+  'direction',
+  (newInfo) => console.log('Drone 1 listen to direction change :', newInfo)
+];
+
+const drone2 = [
+  'velocity',
+  (newInfo) => console.log('Drone 2 listens to velocity change :', newInfo)
+];
+
+commander.invite(drone1);
+commander.invite(drone2);
+
+// change direction
+const newDirectionInfo = {
+  direction: 'east',
+  velocity: 10,
+}
+
+commander.notifyAllWith(newDirectionInfo);
+
+
+// change velocity
+const newVelocityInfo = {
+  direction: 'east',
+  velocity: 50,
+}
+
+commander.notifyAllWith(newVelocityInfo);
+```
+
+<br />
 
 
 ## Observer Pattern 在 state management library 的應用
