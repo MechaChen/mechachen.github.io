@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkbenson_doc=self.webpackChunkbenson_doc||[]).push([[675],{7441:e=>{e.exports=JSON.parse('{"permalink":"/zh-tw/blog/tags/docusaurus","page":1,"postsPerPage":10,"totalPages":1,"totalCount":4,"blogDescription":"Blog","blogTitle":"Blog"}')}}]);

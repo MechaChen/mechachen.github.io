@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkbenson_doc=self.webpackChunkbenson_doc||[]).push([[7326],{3961:e=>{e.exports=JSON.parse('{"permalink":"/zh-tw/blog/tags/greetings","page":1,"postsPerPage":10,"totalPages":1,"totalCount":1,"blogDescription":"Blog","blogTitle":"Blog"}')}}]);
