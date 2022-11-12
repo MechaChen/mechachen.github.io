@@ -1,0 +1,182 @@
+---
+
+sidebar__label: '[React] useLayoutEffect'
+title: '[React] useLayoutEffect'
+
+---
+
+:::note 為什麼寫這篇文章
+  最近在工作時，剛好在研究一些渲染尺寸相關的問題，就聽說過 `useLayoutEffect` 這個 hook， <br />
+  然後最近在幫 senior 審 PR 時，看完後覺得可以用這 hook 解決 code 上面的一些問題，<br />
+  介紹給 senior 後，他說很有幫助，讓我覺得很感動🥺🥺，我也能做出一點貢獻，因此決定來紀念一下<br />
+:::
+
+## 遇到的情境 & 問題
+
+### 情境
+
+想像當我們在玩需要闖關的遊戲，當我們在關卡中，<br />
+遊戲會幫我們保存紀錄，再次登入時，遊戲會幫我們進入到上次進度，<br />
+當我們上次已經闖關成功，再次登入會帶我們到關卡選擇畫面，<br />
+
+這時，我們設計登入遊戲的程式碼時，需要：<br />
+- user 登入時，嘗試取得上次遊戲紀錄，並顯示載入畫面
+- 成功取得紀錄後，導到現在的遊戲進度頁面
+- 沒有紀錄時，顯示主畫面
+
+程式碼如下：
+```jsx
+// mock get game level progress api
+const getGameLevelProgressSuccess = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve()
+    }, 3000);
+  });
+}
+
+const Game = function Game() {
+  const router = useRouter(); // we use next/router to redirect
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const enterGameLevelProgress = async () => {
+    setIsLoading(true);
+
+    try {
+      await getGameLevelProgressSuccess();
+      // because next router.replace is a promise,
+      // we should await it to avoid redirect be called after finally block
+      // and it will show a blink of Game level map content
+      await router.replace('/level5');
+    } catch (err) {
+      // do nothing for now
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    // some synchronous calculation
+    calFib(40);
+    enterGameLevelProgress();
+  }, []);
+
+  return (
+    <div className={styles.container}>
+      {isLoading
+        ? <div>Loading...</div>
+        : <h1>This is all Game Level map</h1>
+      }
+    </div>
+  );
+};
+```
+
+<br />
+上面程式碼結果如下：
+
+<br /><br /><br />
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+  <video width="800" controls>
+    <source src="/videos/withoutUseLayoutEffect.mp4" type="video/mp4" />
+    Your browser not support video tag
+  </video>
+</div>
+
+<br />
+
+### 問題
+
+在開始載入畫面時，會先瞬間顯示 This is all Game Level map，才顯示 Loading 字樣，<br />
+看起來就像是閃頻一樣，這不是我們想要的效果！！！
+
+這是因為 `useEffect` 會在 virtual DOM 渲染到畫面上後才觸發，<br />
+所以一開始會先顯示 isLoading === false 的狀態，<br />
+後續在 `useEffect` 啟動會才會改成 isLoading === true 的狀態<br /><br /><br />
+
+
+## `useLayoutEffect` 怎麼解決問題
+
+`useLayoutEffect` 會在渲染到 browser 前就先執行，就可以避免這個問題，如下圖<br />
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+  <figure style={{ display: 'flex', flexFlow: 'column', alignItems: 'center' }}>
+    <img width="300" src="/img/hook-flow.png" alt="hook flow image" />
+    <figcaption style={{ paddingTop: '20px' }}>
+      <a
+        href="https://github.com/donavon/hook-flow"
+        taget="_blank"
+        style={{ fontSize: '12px' }}
+      >
+        https://github.com/donavon/hook-flow
+      </a>
+    </figcaption>
+  </figure>
+</div>
+
+以下是改寫的程式碼：
+```jsx
+// this will be executed before paint to the DOM
+useLayoutEffect(() => {
+  calFib(40);
+  enterGameLevelProgress();
+}, []);
+```
+
+<br />
+執行的結果：
+<br /><br />
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+  <video width="800" controls>
+    <source src="/videos/useLayoutEffect.mp4" type="video/mp4" />
+    Your browser not support video tag
+  </video>
+</div>
+
+<br /><br />
+
+## `useLayoutEffect` 的缺點
+
+雖然這個 hook 有著非常棒的優點，可以讓我們在畫面渲染前就處理好資訊並同時渲染，<br />
+但是遇到大量的計算時，整個畫面就會卡住，<br />
+例如我們把 `useLayoutEffect` 的計算量加大
+
+```jsx
+useLayoutEffect(() => {
+  // massive calculation by 42 fibonacci number
+  calFib(42);
+  enterGameLevelProgress();
+}, []);
+```
+<br />
+
+畫面一開始就會卡住一陣子，計算完 `calFib(42)` 後才會開始進入 loading 畫面，<br />
+畫面如下：<br /><br />
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+  <video width="800" controls>
+    <source src="/videos/useLayoutEffectFlaw.mp4" type="video/mp4" />
+    Your browser not support video tag
+  </video>
+</div>
+
+<br />
+此時我們的畫面會整個卡住，連按鈕都不能點擊了😱😱，<br />
+這也是為什麼 React 官方不推薦我們使用的原因 (<a hreef="https://reactjs.org/docs/hooks-reference.html#uselayouteffect" target="_blank">useLayoutEffect</a>)
+<br /><br /><br />
+
+
+### 程式碼
+如果有興趣可以到線上編輯器來玩一下：https://stackblitz.com/edit/nextjs-y3ruoh?file=pages%2Findex.js,pages%2Flevel5.js,pages%2F_app.js
+
+
+<br /><br />
+
+:::note 參考文件
+- https://medium.com/hannah-lin/react-hook-%E7%AD%86%E8%A8%98-uselayouteffect-30c93301a618
+- https://reactjs.org/docs/hooks-reference.html#uselayouteffect
+- https://www.youtube.com/watch?v=wU57kvYOxT4&t=10s
+:::
