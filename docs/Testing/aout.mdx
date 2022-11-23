@@ -23,8 +23,8 @@ title: '[AOUT] Ch9. Readability'
 那要如何寫出可讀的測試呢？ 主要包含 4 個部分：<br />
 - [測試的命名](#測試的命名)
 - [變數的命名](#變數的命名)
-- [分離操作和驗證](#分離操作和驗證)
-- [避免初始化和清理](#避免初始化和清理)
+- [分離操作和驗證](#分離操作act和驗證assert)
+- [避免初始化和清理](#避免初始化setup和清理teardown)
 
 <br />
 
@@ -88,7 +88,7 @@ describe('verifyPassword', () => {
 
 <br />
 
-## 分離操作(Act) 和驗證(Assert)
+## 分離操作(Act)和驗證(Assert)
 
 把 act 和 assert 分開來寫，清楚的分離區塊，可以提高可讀性
 
@@ -105,7 +105,7 @@ test('good separation', () => {
 
 <br />
 
-## 避免初始化(Setup)和清理 (Teardown)
+## 避免初始化(Setup)和清理(Teardown)
 
 - 盡量避免用 setup and teardown
 - 很多設定都在 setup 中，我們檢驗個別測試在 setup 中有哪些設定
