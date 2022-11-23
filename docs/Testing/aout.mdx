@@ -1,0 +1,115 @@
+---
+
+sidebar__label: '[AOUT] Ch9. Readability'
+title: '[AOUT] Ch9. Readability'
+
+---
+
+<br />
+
+> 此篇為 the Art of Unit Test 讀後心得 & 筆記整理，參考資訊：
+> - [The Art of Unit Test, Third Edition](https://www.manning.com/books/the-art-of-unit-testing-third-edition)
+> - [單元藝術的測試, 2/e](https://www.tenlong.com.tw/products/9789864342471)
+
+<br />
+
+測是的可讀性是非常重要的一環，若沒有可讀性，則：
+- 你的工作夥伴或後續接手人員看不懂測試，他們就不知道測試在做什麼，你的測試就沒有意義，等於你的測試是沒有信任度的
+- 好的測試，也會是其他人的救星，表示這段程式碼，或這項專案做了什麼，不用讀程式碼就能快速了解這專案
+
+<br />
+
+因此，可讀性幾乎可以說是撰寫測試中最重要的一環，<br />
+那要如何寫出可讀的測試呢？ 主要包含 4 個部分：<br />
+- [測試的命名](#測試的命名)
+- [變數的命名](#變數的命名)
+- [分離操作和驗證](#分離操作和驗證)
+- [避免初始化和清理](#避免初始化和清理)
+
+<br />
+
+
+## 測試的命名
+
+命名中須包含 3 的要素：包含
+- Unit of Work
+- Scenario
+- Expected behavior
+
+這 3 個要素可以完整的表達測試，可以稱這個為 **U.S.E** 命名規則
+
+
+```jsx
+describe(Unit_of_Work, () => {
+	describe(Scenario, () => {
+		it(Expected_Behavior, () => {
+
+		});
+	})
+});
+```
+
+:::info 個人的 murmur
+為什麼這樣的命名充分表達了測試所有的要素？
+  - 包含了完整的時間順序：先有工作單元 → 放在特定情境 → 產出最後結果
+:::
+
+<br />
+<br />
+
+下面為範例：
+
+```jsx
+describe('verifyEmail', () => {
+	describe('when failling min length rule', () => {
+		it('return should greater than 8 characters error message', () => {
+			// ...
+		});
+	});
+});
+```
+
+<br /><br />
+
+## 變數的命名
+
+不要用 Magic number，其他人會看不懂測試的變數所代表的意涵，就會降低測試的可性度
+
+```jsx
+describe('verifyPassword', () => {
+	describe('when same as last time', () => {
+		it('return requires english error message', () => {
+			const result = verifyPassword('owiem,', [], false);
+			expect(result).toBe('requires english');
+		});
+	});
+});
+```
+
+<br />
+
+## 分離操作(Act) 和驗證(Assert)
+
+把 act 和 assert 分開來寫，清楚的分離區塊，可以提高可讀性
+
+```jsx
+test('bad assertion', () => {
+	expect(verifyPassword(testPassword, rules)).toBe('...');
+});
+
+test('good separation', () => {
+	const result = verifyPassword(testPassword, rules);
+	expect(result).toBe('...');
+});
+```
+
+<br />
+
+## 避免初始化(Setup)和清理 (Teardown)
+
+- 盡量避免用 setup and teardown
+- 很多設定都在 setup 中，我們檢驗個別測試在 setup 中有哪些設定
+- 如果全部都寫在 setup 中，有些 setup 用在某些 cases，有些用在另外的 cases，會造成
+    - 不知道每個 test case 需要的先前設定有哪些
+    - setup 會很肥大
+- 需要產生的假物件用 helper function 產生，直接使用在 test cases 裏面
