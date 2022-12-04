@@ -1,0 +1,276 @@
+---
+
+sidebar__label: '[AOUT] Ch7. Trustworthy'
+title: '[AOUT] Ch7. Trustworthy'
+
+---
+
+:::note 前言
+在任何的測試中，如果沒有沒有三個要素：
+- 可信賴的 (Trustworthy)
+- 可維護的 (Maintainability)
+- 可讀的 (Readability)
+
+我們所撰寫的測試有無法有效地發揮其價值<br />
+
+***可信賴的*** ： 如果我們不相信我們測試能確保我們功能無誤，撰寫測試的意義就沒了<br />
+***可維護的*** ： 就算我們確保測試可以確保我們的功能沒問題，但是維護麻煩，會嚴重干擾開發進度，也會使我們放棄撰寫測試<br />
+***可讀的*** ： 最重要的因素，如果沒有可讀性，就無法產生可信賴和可維護的特性
+
+我們會從 **可信賴的** 的特性開始探討
+:::
+
+## 什麼是“可信賴的” (Trustworthy)？
+
+<br />
+
+> ***在該通過的時候通過，在該失敗的時候失敗***
+
+<br />
+
+就是可信賴的核心，<br />
+再說的簡白一些，就是當
+
+***測試失敗時，你會不會說***：
+- 「喔，他本來就會失敗」
+- 「這不代表產品程式有問題」
+
+你會相信當測試失敗時，產品程式碼真的出了問題
+
+<br />
+
+***當測試成功時，你不會說***：
+- 「我會用 debugger 一步步來確認我的程式碼有沒有問題」
+
+你會相信測試過的程式碼確實地完成了需求
+
+<br />
+
+**可信任的測試讓我們對產品程式碼有良好的掌握度**
+
+<br />
+
+
+## 撰寫可信任測試的原則
+
+以下一些原則，可以幫我們撰寫可信賴的技術
+
+- 決定何時刪除或修改測試
+- 避免測試帶邏輯
+- 一次只測試一個關注點
+- 推行程式碼審查
+
+<br />
+
+### 決定何時刪除或修改測試
+
+|  | 是否需要更改測試？ |
+| --- | --- |
+| 產品 bug | ❌ |
+| 測試 bug | ✅ |
+| 語意或 API 變更 | ✅ |
+| 矛盾或無效的測試 | :warning: (according to requirement) |
+| 重新命名或重構測試 | ✅ |
+| 刪除重複的測試 | ✅ (pros > cons) |
+
+<br />
+
+**1. 語意或 API 變更**
+
+```csharp
+/* 8.1 - original Api */
+
+public void SemanticsChange() {
+	LogAnalyzer logan = new LogAnalyzer();
+	Assert.IsFalse(logan.IsValid("abc");
+}
+```
+<br />
+
+當 `LogAnalyzer` 需要初始化（使用 `Initialize` method)
+
+```csharp
+/* 8.2 - Api changed - need initialize */
+
+public void SemanticsChange() {
+	LogAnalyzer logan = new LogAnalyzer();
+	logan.Initialize();
+	Assert.IsFalse(logan.IsValid("abc");
+}
+```
+
+<br />
+用工廠模式處理初始化的部分，讓 call <code>Initialize</code> 不用寫在每個 test case 中，<br />
+即遵守 DRY 原則
+<br />
+<br />
+
+```csharp
+/* 8.3 - refactor by Factory pattern */
+
+public void SemanticChange() {
+	LogAnalyzer logan = MakeDefaultAnalyzer();
+	Assert.IsFalse(logan.IsValid("abc");
+}
+
+public void MakeDefaultAnalyzer() {
+	LogAnalyzer anaylzer = new LogAnalyzer();
+	analyzer.Initialize();
+	return analyzer;
+}
+```
+
+<br />
+
+**2. 矛盾或無效的測試**
+
+舊需求：允許長度 3 的檔名<br />
+新需求：只允許長度 ≥ 4 的檔名<br />
+if 舊需求 test pass → 新需求 test fail<br />
+vice versa
+
+> **確認需求是否本身就矛盾，確認最後的需求，刪除另一個矛盾的**
+
+<br />
+<br />
+
+
+**3. 重新命名或重構測試**
+
+當測試的可讀性低時，就**需要重新撰寫測試**
+
+<br />
+<br />
+
+**4. 刪除重複的測試**
+
+刪除重複的測試各有利弊，如下：
+
+`Pros`
+
+- 測試越多，越可能發現 bug
+- 同一個測試，可以看到不同設計方法和語意
+
+`Cons`
+
+- 一個問題會導致多個失敗
+- 相似的測試必須用不同的名字，否則會分散在不同的類別中
+- 多個測試會帶來維護性的問題
+
+<br />
+
+> 作者的建議是：**刪除重複的測試**，即使他沒那麼熱衷
+
+<br />
+
+因為重複的測試帶來的壞處還是大於好處，
+主要原因是影響到後續的**可維護性**
+
+<br />
+
+### 避免測試帶著邏輯
+
+邏輯：如何正確地達成我們想要的需求，重點在**如何達成**<br/>
+但在測試中，我們不關心**如何達成**，我們只在意**結果**<br />
+案例：隨機產生亂數當作數入 → 測試結果不穩定 → 不可信任<br />
+
+不應該有：
+
+- switch、if else
+- foreach、for、while
+
+Cons：
+
+- 難以閱讀和理解
+- 測試難以重現
+- 測試比較容易發生 bug 或測試了錯誤的事情
+- 難以命名測試，因為他執行的多個任務
+
+我們測試 user + greeting 組成的句子
+
+```csharp
+public void ProductionLogicProgram() {
+	string user = "USER";
+	string greeting = "GREETING";
+	string actual = MessageBuilder.Build(user, greeting);
+	Assert.AreEqual(user + greeting, actual);
+}
+```
+<br />
+
+實際上，我們需要 user 和 greeting 中間有一個空格，<br />
+上述用邏輯撰寫會更容易出錯，因此寫死固定值會更好
+
+```csharp
+public void ProductionLogicProgram() {
+	string user = "USER";
+	string greeting = "GREETING";
+	string actual = MessageBuilder.Build(user, greeting);
+	Assert.AreEqual("user greeting", actual);
+}
+```
+
+<br />
+
+### 一次只測試一個關注點
+
+一個關注點是工作單元的最終結果，可能是：
+
+- return value
+- state changed
+- 3rd party interaction
+
+測試多個關注點的缺點：
+
+- 命名困難
+- 如果第一個測試拋出錯誤沒有被抓住，我們只看得見第一個測試失敗
+
+<br />
+
+範例如下
+
+```csharp
+public void IsValid_WhenValid_ReturnsTrueAndRemembersItLater()  {
+	LogAnalyzer logan = MakeDefaultAnalyzer();
+	Assert.IsTrue(logan.IsValid("abc"));
+
+	// 2nd assert will not be called !!
+	Assert.IsTrue(logan.WasLastCalledValid);
+}
+```
+
+- expected result 的命名不好：
+  - 名稱冗長
+  - 若要簡化名稱，就會太過抽象，導致可讀性差
+
+- 可能只顯示第一個錯誤：<br />
+  - 若一個個錯誤拋出了例外 & 沒有被捕捉，我們無法閱讀到第二個錯誤，<br />
+  那我們就會誤以為只有第一個錯誤產生，而只解決第一個錯誤<br />
+  但如果我們可以同時看見所有的錯誤，我們有機會發現更根本的問題
+
+<br />
+
+我們應該拆成多個單元測試，每次只測試一個關注點 (結果)
+
+<br />
+
+### 推行程式碼審查
+
+- 幫助每個工程師掌握全局
+- 增加學習的機會
+- 容易產生易讀、高品質、耐用的程式碼
+
+<br />
+
+最後，我們可以利用下列清單**建立可信任測試的步驟**
+
+:::note 建立可信任測試的步驟
+- [ ] 1 - 註解掉你認為測試所涵蓋的測試碼
+- [ ] 2 - 執行所有測試
+- [ ] 3 - 如果全過，表示少一個測試 or 測試了錯誤的東西
+- [ ] 4 - 補上測試碼，並持續註解產品程式碼，新的測試碼預期要是失敗的
+- [ ] 5 - 移除註解
+- [ ] 6 - 新的測試碼應該要通過，表你已經成功加入一個可信賴的測試
+- [ ] 7 - 如果新測試失敗，說明測試有 bug
+:::
+
