@@ -24,12 +24,15 @@ title: '[AOUT] Ch7. Trustworthy'
 
 <br />
 
+可信賴的核心就是
+<br />
+
 > ***在該通過的時候通過，在該失敗的時候失敗***
 
 <br />
+再說的明白一些，就是當
 
-就是可信賴的核心，<br />
-再說的簡白一些，就是當
+<br /><br />
 
 ***測試失敗時，你會不會說***：
 - 「喔，他本來就會失敗」
@@ -40,7 +43,7 @@ title: '[AOUT] Ch7. Trustworthy'
 <br />
 
 ***當測試成功時，你不會說***：
-- 「我會用 debugger 一步步來確認我的程式碼有沒有問題」
+- 「我要再用 debugger 一步步來確認我的程式碼有沒有問題」
 
 你會相信測試過的程式碼確實地完成了需求
 
@@ -77,6 +80,8 @@ title: '[AOUT] Ch7. Trustworthy'
 
 **1. 語意或 API 變更**
 
+程式碼如下
+
 ```csharp
 /* 8.1 - original Api */
 
@@ -87,7 +92,8 @@ public void SemanticsChange() {
 ```
 <br />
 
-當 `LogAnalyzer` 需要初始化（使用 `Initialize` method)
+當 class `LogAnalyzer` 的使用方法有變更，需要初始化（使用 `Initialize` method)，<br />
+此時，我們就一定要更改測試
 
 ```csharp
 /* 8.2 - Api changed - need initialize */
@@ -100,7 +106,8 @@ public void SemanticsChange() {
 ```
 
 <br />
-用工廠模式處理初始化的部分，讓 call <code>Initialize</code> 不用寫在每個 test case 中，<br />
+小技巧：<br />
+我們可以用工廠模式處理初始化的部分，讓 call <code>Initialize</code> 不用寫在每個 test case 中，<br />
 即遵守 DRY 原則
 <br />
 <br />
@@ -176,8 +183,8 @@ vice versa
 
 不應該有：
 
-- switch、if else
-- foreach、for、while
+- `switch`、`if else`
+- `foreach`、`for`、`while`
 
 Cons：
 
