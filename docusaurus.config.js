@@ -61,7 +61,7 @@ const config = {
         title: 'Benson',
         logo: {
           alt: 'Benson Logo',
-          src: 'img/blog-logo.jpeg',
+          src: 'img/whale.png',
         },
         items: [
           {
