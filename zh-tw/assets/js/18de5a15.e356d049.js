@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkbenson_doc=self.webpackChunkbenson_doc||[]).push([[6238],{2709:e=>{e.exports=JSON.parse('{"label":"Catelog","permalink":"/zh-tw/docs/tags/catelog","allTagsPath":"/zh-tw/docs/tags","count":1,"items":[{"id":"Network/catelog","title":"[Catelog] Network","description":"HTTPS","permalink":"/zh-tw/docs/Network/catelog"}]}')}}]);
