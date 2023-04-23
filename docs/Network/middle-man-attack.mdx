@@ -7,3 +7,53 @@ tags:
   - Security
 
 ---
+
+
+
+## 問題：非對稱加密還是會被破解
+
+雖然非對稱式加密可以阻止駭客直接從旁邊知道你的資料 (Sniffing attack)，<br />
+
+但是當駭客直接介入我們的傳輸過程時，將傳輸的對象導向成駭客自己時，<br />
+:arrow_right: 這時候，駭客就可以拿到 Person 2 的 Public key <br />
+:arrow_right: 然後駭客將自己的 Public key (這裡稱 H-Public key) 傳給 Person 1 <br />
+
+<img src="/img/middle-man-stealing-key.png" />
+
+<br /><br /><br />
+
+:arrow_right: 這樣，Person 1 傳的訊息就會被駭客用 H-Private key 解開 <br />
+:arrow_right: 最後，駭客再用已取得的 Public key 加密回去，回傳給 Person 2， <br />
+:arrow_right: Person 2 就會以為傳輸的過程沒問題
+
+<img src="/img/middle-man-attack.png" />
+
+<br /><br /><br />
+
+
+上述過程稱為 **中間人攻擊** (Middle man attack)
+
+
+<br /><br />
+
+:::info 我們都已經知道 Client 的 IP, MAC address 了，為什麼還會被中間人攻擊呢？
+
+其實駭客可以透過一些方法，將 Server 導向錯誤的 IP address，
+以下是幾種常見的方法：
+
+- **ARP 欺騙 (ARP spoofing)：** <br />
+	攻擊者利用 ARP 協議的漏洞，偽造 ARP 回應，使受害者誤以為攻擊者的 MAC 地址是通信對象的 MAC 地址。 <br />
+  即使知道正確的 MAC 地址，攻擊者仍然可以使用這種方法欺騙我們的設備
+
+- **DNS 劫持 (DNS hijacking)：** <br />
+	攻擊者綁架 DNS 查詢過程，將受害者引導至惡意網站。即使我們知道目標 IP 地址，攻擊者仍可在 DNS 查詢過程中進行攻擊
+:::
+
+
+
+<br />
+
+## 結論
+
+所以，非對稱加密還不是最安全的方法，<br />
+因為我們會被 **`中間人攻擊`** ，誤導到錯誤的對象，而我們渾然不知
