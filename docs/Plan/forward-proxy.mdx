@@ -1,0 +1,164 @@
+---
+
+sidebar_label: '[CDN] CDN 是什麼?'
+title: '[CDN] CDN 是什麼?'
+tags:
+  - Security
+  - System Design 
+
+---
+
+> 本文非原創，以下是參考資料和圖片來源：
+> - [Forward and Reverse proxy by Alex Xu](https://www.linkedin.com/posts/alexxubyte_systemdesign-coding-interviewtips-activity-6990698121835986944-_gl8?utm_source=share&utm_medium=member_desktop) <br />
+> 
+
+<br />
+
+
+## CDN 是什麼？ 為什麽要用 CDN?
+
+- 在早期 199X 年代，原本是用來作為傳輸靜態內容到各個世界
+- 後來近期，只有 http traffic，就有機會用 CDN
+- 尤其是在網速很重要的年代，0.1 秒都會帶來極大的產值
+
+<img src="/img/efficiency-and-conversion-rates.png" width="400" />
+
+
+<br /><br /><br />
+
+
+:::info Conversion rate (轉化率) 是什麼？
+Conversion Rate（轉化率）是一個衡量網站、應用程序或營銷活動效果的指標，<br />
+通常用於衡量用戶在達到某個目標（例如購買產品、註冊帳戶或填寫表格）方面的表現。<br />
+換句話說，它描述了從用戶瀏覽網站到實際完成目標操作的過程中的成功比例。 <br />
+
+轉化率的計算公式如下： <br />
+```
+轉化率（%） =（完成目標操作的用戶數量 / 參與用戶總數）x 100
+```
+
+<br />
+例如，如果一個電子商務網站有 1,000 名訪客，其中有 50 名訪客購買了產品，那麼轉化率就是： <br />
+
+```
+轉化率（%） =（50 / 1,000）x 100 = 5%
+```
+
+<br />
+轉化率是一個重要的營銷和用戶體驗指標，通常用來評估廣告投放、網站設計、產品定價等方面的成功程度。<br />
+通過分析和優化轉化率，企業可以提高收入、降低獲客成本，並提高客戶滿意度。
+:::
+
+
+<br /><br />
+
+
+為了讓網站的內容能快速傳送給使用者，CDN provider 在全世界各地都架設了 CDN servers
+
+- CDN 分布在全球的每一個點稱作 **`Pop (Point of Presence)`**
+- 在每個 Pop 的 server，稱做 **`Edge server`**
+
+<img src="/img/cdn-regions.png" width="400" /> <br />
+<img src="/img/pop.png" width="300" /> <br />
+<img src="/img/edge-server.png" width="100" />
+
+
+<br /><br />
+
+
+## CDN 找尋最近的 Edge server 的技術
+
+<img src="/img/cloud-providers.png" width="450" />
+
+<br /><br />
+
+有分以下 2 種：
+- **`DNS based routing`**
+- **`Anycast`**
+
+<img src="/img/cdn-routing.png" width="300" />
+
+<br /><br />
+
+
+
+### DNS based routing
+
+- DNS based routing 的每個 CDN 的 ip address 都不一樣
+
+<img src="/img/dns-based-routing.png" width="400" />
+
+<br />
+
+
+### Anycast
+
+- Anycast 的每個 CDN 的 ip address 都一樣
+
+<img src="/img/anycast.png" width="400" />
+
+
+
+## CDN 額外的好處
+
+- 額外多了安全性 (Security)
+
+
+<br />
+
+
+### Security
+
+因為 CDN 有很多的 server，具有大量的 network capactiy，
+  可以抵檔 DDOS
+
+<img src="/img/cdn-and-ddos.jpg" width="500" />
+
+
+<br /><br /><br />
+
+
+尤其是利用 Anycast 建立的 CDN，更能有效地擴散攻擊
+
+<img src="/img/anycast-and-ddos.jpg" width="500" />
+
+
+<br /><br /><br />
+
+
+
+## CDN 讓使用者看到其內容的流程是如何運作的？
+
+
+<img src="/img/cdn-flow-chart.webp" />
+
+<br /><br />
+
+
+1. Client 會檢查有沒有 local 的 DNS cache，有的話就返回該 cache
+2. 如果沒有 DNS cache，就會去 DNS resolver 查找 Server ip
+3. 如果沒有使用 CDN，就會直接會傳 Server ip address
+4. 如果有使用 CDN，就會返回一個 CNAME (Conical Name) 標準域名，指向 CDN server
+5. 此時，我們會再要求 CDN 的 Authoritative Name Server 去替我們解析域名，進而返回 CDN 的 load balancer 的域名
+6. 我們會再去解析 CDN load balancer 的域名，最後得到最近的 Edge server 的域名
+10. 如果 Edge server 沒有資料，就會往 central 找，甚至去找到原本的 Web server
+
+
+<br /><br />
+
+
+## 結論
+藉由架在不同地區的 CDN Edge server，可以幫我們
+- 利用 **Cache** 快速靜態返回頁面
+- **處理 HTTP traffic**，避免流量阻塞
+- 額外增加安全性，有多個 CDN Edge servers 幫我們**抵擋 DDOS attack**
+
+
+<br />
+
+## 參考資訊
+- [关于 cdn、回源等问题一网打尽](https://link.segmentfault.com/?enc=GCHAOWTTXttsSNxSorAdGA%3D%3D.7kCGqMlUEDvDSl9jLEtOKjRRK8C%2BpWYBe17taWKtElRRFPCYjfvsQ6t0fdBJO2W7)
+- [What Is A CDN? How Does It Work? - YouTube](https://www.youtube.com/watch?v=RI9np1LWzqw&t=1s)
+- [How does CDN work? - by Alex Xu - ByteByteGo Newsletter](https://blog.bytebytego.com/p/how-does-cdn-work)
+- [图解|什么是内容分发网络(cdn) - 掘金 (juejin.cn)](https://juejin.cn/post/7064952956201730062#heading-6)
+- [CDN 是什麼？Google Cloud CDN 用途、架構完整介紹 - Cloud Ace (cloud-ace.tw)](https://blog.cloud-ace.tw/networking-website/cdn/cloud-cdn-intro/)
