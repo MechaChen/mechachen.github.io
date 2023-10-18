@@ -1,0 +1,355 @@
+---
+
+sidebar__label: '[Unit Test] 1.3 - 如何做好測試？ - 可信任篇'
+title: '[Unit Test] 1.3 - 如何做好測試？ - 可信任篇'
+
+---
+
+在我看完[單元測試的藝術](https://www.books.com.tw/products/0010765689)和其他一些測試相關的資料後，我覺得如果要讓測試可信任，就應該具備以下 2 點：
+
+* **可讀的，我能清楚測試撰寫者的意圖**
+* **此測試在該成功時成功，並且在該失敗時失敗**
+
+而要如何驗證可信任度呢？ 還有如何加強或修正可信任度呢？
+
+我們下面就會來介紹**「驗證可信任度的方法」**和**「修復可信任度的指導原則」**
+
+<br />
+
+## 驗證「可信任度」的流程
+
+那如果要驗證我們的測試是否具有上述特性，要怎麼做呢？
+
+如果你加了一個新測試，這裡有一套完整的流程供大家檢驗你的新測試：
+
+> 1. 註解掉你認為這段測試所涵蓋的那一段產品程式碼
+> 2. 執行所你的測試 
+> 3. 檢驗結果：新測試是否失敗？ 如果測試失敗了，那你的測試已經 50% 可信，如果測試通過了，表示你的測試根本沒有做到保護的本分，不然的話，你的測試應該會因此而失敗
+> 4. 尋找為什麼沒有失敗的原因，修正他，直到測試**正常的失敗** 
+> 5. 移除之前的註解
+> 6. 檢驗結果：新測試是否成功？ 新測試現在應該已經通過！ 如果通過，恭喜你，不用看下一點了！
+> 7. 如果沒有，代表你測試了錯誤的東西，那就持續修正你的測試，直到通過，同時也要再回去測試註解產品程式碼註解時，還是要失敗。在該成功時成功，該失敗時失敗，才代表你的測試完成了
+
+<br />
+
+雖然步驟很多，但其實做起來很快，如果我們只針對一個測試反覆驗證
+花費最多的時間只會是在思考
+
+* 為什麼該成功時沒有成功
+* 為什麼該失敗時沒有失敗
+
+<br />
+
+以下我會以一個限制字數上限的 input 為例
+
+```jsx
+// nameInput.jsx
+export const idNameInput = 'inputName';
+export const nameLengthLimit = 100;
+
+const NameInput = function NameInput(props) {
+  const { defaultName } = props;
+  const [inputVal, setInputVal] = useState(defaultName);
+
+  const handleInputVal = useCallback((e) => {
+    if (e.target.value.length > nameLengthLimit) {
+      return;
+    }
+
+    setInputVal(e.target.value);
+  }, [onChangeCampaignName]);
+  
+  return (
+    <Flex flexDirection="column" alignItems="flex-end">
+      <Box display="inline-flex" alignItems="center">
+        <Text width={labelWidth}>
+          Name:
+        </Text>
+        <Input
+          data-track={idNameInput}
+          value={inputVal}
+          onChange={handleInputVal}
+          error={!inputVal}
+        />
+      </Box>
+      <Text>
+        {inputVal.length} / {nameLengthLimit}
+      </Text>
+    </Flex>
+  );
+}
+
+export default NameInput;
+```
+
+<br />
+
+```jsx
+// nameInput.test.tsx
+import { fireEvent, render } from "@testing-library/react";
+
+import NameInput, { nameLengthLimit, idNameInput } from "./_nameInput";
+
+describe('NameInput', () => {
+  test('when typing on input which is already at its name length limit,
+        should keep same input value', 
+  () => {
+    // Arrange
+    // 隨便使用一個英文字
+    const trivialChar = 'a';
+    // 用上面的英文字製造字串，重複數量到 name input 的上限字數
+    const maxString = trivialChar.repeat(nameLengthLimit);
+
+    // Act
+    const { getByTestId } = render(<NameInput defaultName={underLimitString} />);
+    const input = getByTestId(idNameInput);
+
+    // 宣告一個 name 長度極限(100) + 1 個 'a' 的字串
+    const newString = maxString + trivialChar;
+    // 傳到 input 中
+    fireEvent.change(input, { target: { value: newString }});
+
+    // Assert
+    // 應該要是 name 長度極限 (100) 個 'a' 的字串
+    expect(input).toHaveValue(maxString);
+  });
+```
+
+<br />
+
+
+### 1st. 註解掉你認為這段測試所涵蓋的那一段產品程式碼
+
+我們先把限制 input 輸入更多值的判斷是給註解掉，來看看是不是就真的不會被擋住了
+
+```jsx
+const handleInputVal = useCallback((e) => {
+    // if (e.target.value.length > nameLengthLimit) {
+    //   return;
+    // }
+
+    setInputVal(e.target.value);
+}, [onChangeCampaignName]);
+```
+
+<br />
+
+### 2nd. & 3rd. 執行所你的測試 & 檢驗結果：新測試是否失敗？
+
+```bash
+expect: 'aaaa....aa'  (100 個 a)
+actual: 'aaaa....aaa' (101 個 a)
+```
+
+結果測試失敗了！ 正如我們所預期的那樣，我們的測試在該失敗的時候失敗了，這樣我們的測試就先有 50% 的可信賴度了
+
+<br />
+
+因此我們可以跳到 5th 步
+
+<br />
+
+
+### 5th. 移除之前的註解
+
+接者，我們把上述的判斷式註解回來
+
+```jsx
+const handleInputVal = useCallback((e) => {
+    if (e.target.value.length > nameLengthLimit) {
+      return;
+    }
+
+    setInputVal(e.target.value);
+}, [onChangeCampaignName]);
+```
+
+<br />
+
+### 6th. 檢驗結果：新測試是否通過
+
+```bash
+expect: 'aaaa....aa'  (100 個 a)
+actual: 'aaaa....aa'  (100 個 a)
+```
+
+恭喜你，你的測試成功了！！
+
+跟我們預期的一樣，的確在字數達到上限時，就不會讓 user 輸入更多的字了！！
+
+
+<br /><br /><br />
+
+這就是大致上的流程，各位可以利用這個範例再想想看有沒有
+* 註解卻成功的情形 （應該要失敗）
+* 沒註解卻失敗的情形 (應該要成功)
+
+的情形，和怎麼去解決
+
+<br /><br /><br />
+
+希望上述範例有多多少少幫助各位了解驗證測試「可信任度」的流程
+
+
+<br />
+
+## 修復可信任度的指導原則
+
+在書中，有提到以下幾點指導原則，可以讓你的測試變得**可信任**：
+
+1. **決定何時刪除測試或修改邏輯**
+2. 避免測試中帶著邏輯
+3. 一次只測試一個關注點
+4. 把單元測試和整合測試分開
+5. 推行程式碼邏輯
+
+<br />
+
+但根據我的認知和實際操演，只有第一點是完全針對「可信任度」來進行修正的，其他的部分我認為應該是
+
+2. 避免測試中帶著邏輯 -> 可維護性(Maintainable)
+3. 一次只測試一個關注點 -> 可讀性(Readable) & 可維護性 (Matainable)
+4. 把單元測試和整合測試分開 -> 可維護性(Maintainable)
+5. 推行程式碼審查 -> 可維護性(Maintainable)
+
+
+
+所以，我這邊只會針對第一點，來讓大家了解怎麼改善測試的可信任度
+
+
+<br />
+
+### **決定何時刪除測試或修改邏輯**
+
+我們會根據不同的情境，來**決定何時刪除測試或修改邏輯**，以下是幾個常見的情境
+
+當**產品程式碼** or **測試程式碼**有問題
+1. **產品 bug**: 被測試的產品程式碼有 bug
+2. **測試 bug**: 測試程式中有 bug
+3. **語意或 API 有變更**: 被測試的產品程式碼語意發生變化，但功能不變
+4. **矛盾或無效的測試**: 和測試相關的產品需求異動，產品程式碼跟著改變
+
+
+當**產品程式碼** or **測試程式碼**沒問題
+5. **重新命名或重構測驗** 
+6. **去除重複的程式碼**
+
+以下是我整理的表格：
+
+|                    | 修改產品 | 修改測試 | 優化 |
+| ------------------ | -------- | -------- | ---- |
+| 產品 bug           | ✅       |          |      |
+| 測試 bug           |          | ✅       |      |
+| 語意或 API 有變更  |          | ✅       |      |
+| 矛盾或無效的測試   | 🟡       | 🟡       |      |
+| 重新命名或重構測試 |          |          | ✅   |
+| 去除重複的程式碼   |          |          | ✅   |
+
+<br />
+
+#### 1. 產品有 bug
+
+✅ 要修改產品
+❌ 不用修改測試
+
+當產品有 bug，就應該修改產品，而不是去修改測試去讓產品看起來好了，就算有時候這樣比較輕鬆，但這本質上就是削足適履的行為
+
+如果一直沒有過測試讓你感到煩躁，那這時候請你想想，你現在不修好，後續此產品 bug 還是會一直發生，而且可能還會延生出其他的 bug，那就不如先暫時轉換一下心情，再來想想怎麼解決，可以參考 Google Engineer Lead Addy Osmani 的 debug 技巧 [Addy Osmani_Debugging Tactics](https://www.linkedin.com/posts/addyosmani_debugging-tactics-activity-7003411342632124416-mvUC/?originalSubdomain=mk)
+
+
+<br />
+
+#### 2. 測試有 bug
+
+❌ 不要修改產品
+✅ 要修改測試
+
+修改你的測試 bug，直到
+* 確保測試該失敗的時候失敗
+* 確保測試該成功的時候成功
+
+
+<br />
+
+#### 3. 語意或 API 有變更
+
+❌ 不要修改產品
+✅ 要修改測試
+
+假設你的 component, function 或 class 使用方式有變動，舉例如下：
+
+```jsx
+// profileComponent.jsx
+
+export idFullName = 'fullName';
+
+const ProfileComponent = (props) => {
+    const { firstName, lastName } = props;
+
+    return <p testId={idFullName}>{firstName + lastName}</p>;
+}
+
+export default ProfileComponent;
+```
+
+
+```jsx
+// profileComponent.test.jsx
+
+describe('ProfileComponent', () => {
+    test('by default, should return user full name', () => {
+        // Arrange
+        const trivialFirstName = 'Benson';
+        const trivialLastName = 'Chen';
+    
+        // Act
+        const { getByTestId } = render(<ProfileComponent
+            firstName={trivialFirstName}
+            lastName={trivialLastName}
+        />
+        const fullName = getByTestId(idFullName);
+        
+        // Assert
+        expect(idFullName).toHaveTextContent(trivialFirstName + trivialLastName);
+    });
+});
+```
+
+<br />
+
+但當我們改變 `<ProfileComponent />` 接受 name 的形式後，例如現在我們就只接收一個 `name` 的 prop，且 `name` 是一個物件，包含 `firstName` 和 `lastName` 的 key value pair，那我們的測試傳值的方式就要改變
+
+```jsx
+export const idFullName = 'fullName';
+
+const ProfileComponent = (props) => {
+    const { name } = props;
+
+    return <p testId={idFullName}>{name.firstName + name.lastName}</p>;
+}
+
+export default ProfileComponent;
+```
+
+
+```jsx
+describe('ProfileComponent', () => {
+    test('by default, should return user full name', () => {
+        // Arrange
+        const trivialName = {
+            firstName: 'Benson',
+            lastName: 'Chen',
+        };
+    
+        // Act
+        const { getByTestId } = render(<ProfileComponent name={trivialName} />
+        const fullName = getByTestId(idFullName);
+        
+        // Assert
+        expect(idFullName).toHaveTextContent(trivialName.firstName + trivialName.lastName);
+    });
+});
+```
+
+
+<未完待續>
