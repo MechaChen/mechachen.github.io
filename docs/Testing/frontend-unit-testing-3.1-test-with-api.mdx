@@ -1,0 +1,260 @@
+---
+
+sidebar__label: '[Unit Test] 3.1 - 與 api 的測試'
+title: '[Unit Test] 3.1 - 與 api 的測試'
+
+---
+
+## 前言
+在前端，我們會有好幾種呼叫 api 的方式：
+
+> 1. 直接利用 fetch 或 axios 等直接呼叫 api
+> 2. **將 fetch 和需要的參數封裝在一個 function 裏，用 function 來呼叫 api**
+
+此處我們用第二種方式處理，下面會說明原因
+
+<br />
+
+
+## 為什麼要使用封裝的函式來 call api？
+讓 call api 的時候更語意化，不用太過在乎細節，讓封裝過的 api function 來處理 call api 的相關細節，
+範例如下： 假設我們今天想上傳一個 user 的資訊
+
+```jsx
+// apis/user.js
+
+const apiUploadUserData = async (userFields) => {
+    const formData = new FormData();
+
+    Object.entries(userFields).forEach(([key, value]) => {
+        uploadForm.append(key, value);
+    });
+
+    await axios({
+        method: 'post',
+        url: '/users',
+        headers: { 'Content-Type': 'multipart/form-data' },
+        data: uploadForm,
+    });
+};
+```
+
+<br />
+
+```jsx
+// page/user.jsx
+
+const User = () => {
+    const [name, setName] = useState();
+    const [email, setEmail] = useState();
+    const [address, setAddress] = useState();
+
+    useEffect(() => {
+        apiUploadUser({ name, email, address })
+            .then(() => {
+                alert('Upload user successfully');
+            })
+            .catch(() => {
+                alert('Upload user failed')
+            });
+    }, []);
+
+    return (...);
+};
+```
+
+這樣我們在 Component 呼叫時就不用寫太多邏輯了，將 api 處理邏輯的部份和 Component 處理 UI 互動的部分分離開來
+
+
+<br />
+
+## 問題：單元測試需偽造 api response
+因為我們是在做單元測試，基本上希望與外界的連結越少越好，才能確保每個工作單位測試的結果都能維持一致，網路請求就是外部因素之一
+
+所以，針對工作單位會使用到網路請求的部分，我們可以使用偽資料 (mock data)，去除外部因素，使得單元測試能夠在穩定的 api response 下正確的顯示測驗結果
+
+
+<br />
+
+
+## 3 步驟來 mock api
+如果專案上使用封裝的 api，通常我們會將相同業務邏輯的資料放在一起，例如跟 user 有關的放一起，product 有關的放在一起
+
+若專案上對應的後端架構是 micro service，可以直接以 service 來區分封裝 api 的資料夾，例如：`/api/user.js` 、`/api/product.js`
+
+
+假設我們在 `/api/user.js` 有 3 隻 api
+
+```jsx
+export const apiGetUser = async ({ userUuid }) => {
+    await axios({
+        method: 'get',
+        url: '/users',
+        params: { uuid: userUuid },
+    });
+};
+
+export const apiUploadUserData = async (userFields) => {
+    const formData = new FormData();
+
+    Object.entries(userFields).forEach(([key, value]) => {
+        uploadForm.append(key, value);
+    });
+
+    await axios({
+        method: 'post',
+        url: '/users',
+        headers: { 'Content-Type': 'multipart/form-data' },
+        data: uploadForm,
+    });
+};
+
+export const apiUpdateUser = async ({
+    userUuid,
+    ...userFields,
+}) => {
+    const formData = new FormData();
+
+    Object.entries(userFields).forEach(([key, value]) => {
+        uploadForm.append(key, value);
+    });
+
+    await axios({
+        method: 'post',
+        url: '/users',
+        params: { uuid: userUuid },
+        headers: { 'Content-Type': 'multipart/form-data' },
+        data: uploadForm,
+    });
+};
+```
+
+若我們要 mock api 的 response，我們需要執行以下 3 步驟：
+
+1. **引入 (Import)**：引入真實封裝 api 的 function 的所在檔案
+2. **監控 (Monitor)**：用 `jest.mock` mock 整個檔案
+3. **偽造 (Mock)**：用 `.mockResolvedValue` 來 mock api response
+
+<br />
+
+### 引入
+引入真實封裝 api 的 function 的所在檔案
+
+<br />
+
+### 監控
+自動 mock，用 jest.mock mock 整個檔案
+
+```jsx
+import { apiUploadUser, ... } from '/apis/users';
+
+jest.mock('./users');
+```
+
+<br />
+
+這時候，裡面的每個封裝的 api 都會被改寫成 jest.fn，我們就可以利用 jest.fn 的相關 function 來對封裝的 api function 做監控，包括：
+
+- 監控 api function 呼叫次數
+- 監控 api function 呼叫的常數
+- 控制 api function 回傳的資料
+
+<br />
+
+:::info 手動 mock
+如果我們封裝的 api 有一些特別的需求，不想要 jest.mock 直接幫我們複寫成 jest.fn， 我們可以在 jest.mock 傳入第 2 個參數，讓我們自己 mock 對應的 api， （如當我們封裝的 api 是用 class 撰寫時，就需要自己撰寫)
+
+```jsx
+import { apiUploadUsers, ... } from './users';
+
+jest.mock('./users', () => ({
+    apiGetUser: jest.fn(),
+    apiUploadUser: jest.fn(),
+    apiUpdateUser: jest.fn(),
+}));
+```
+:::
+
+<br />
+
+### 偽造
+對於已經用 `jest.fn` 覆寫過的 api function，我們可以用 `mockResolvedValue` 來偽造對應的 api response，這樣的好處是：
+
+- 我們可以自己客製化回傳結果，我們可以根據 test case 回傳不同的結果
+- 回傳的測試結果是穩定的，不會隨著 api 變動
+
+壞處是：
+
+- 我們需要自己維護回傳結果，當 api schema 有更新時我們需要自己更新
+
+```jsx
+describe('Component', () => {
+    test('when under some conditions, should show responded results', () => {
+        apiGetUser.mockResolvedValue({
+            name: 'fake user name',
+            email: 'fake user email',
+            address: 'fake user address',
+        });
+
+        ...
+    });
+
+    test('when under new conditions, should show another results', () => {
+        apiGetUser.mockResolvedValue({
+            name: 'new fake name',
+            email: 'new fake email',
+            address: 'new fake address',
+        });
+
+        ...
+    });
+})
+```
+
+<br /><br />
+
+
+:::info 當只需要 mock 少數 api function，用 `jest.spyOn`
+當我們在測試 Component 時，有時候只需要用到極少數的 api function，這時候，我們可以用 jest.spyOn 去 mock 特定的 api function，不用手動去複寫整包 module，範例如下：
+
+```jsx
+import * as userApis from '/apis/users';
+
+jest.spyOn(userApis, 'apiGetUser');
+
+describe('Component', () => {
+    test('when under some conditions, should show some results', () => {
+        apiGetUser.mockResolvedValue({
+            name: 'fake name',
+            email: 'fake email',
+            address: 'fake address',
+        });
+
+        ...
+    });
+});
+```
+:::
+
+<br />
+
+
+## 結論
+我們在做單元測試，但工作單位有網路請求時，我們可以利用 `jest.mock` 3 步驟在單元測試中偽造 api response，分別是：
+
+1. 引入：引入真實 api 檔案
+2. 監控：利用 jest.fn 改寫原檔案 function 並重中監控
+3. 偽造：用 mockResolvedValue 偽造 api response
+
+就可以順利的達成偽造 api 的目的，順利地做單元測試
+
+
+<br />
+
+
+### 參考文獻
+- [Stop mocking fetch](https://kentcdodds.com/blog/stop-mocking-fetch)
+- [the-only-3-steps-you-need-to-mock-an-api-call-in-jest-39mb](https://dev.to/zaklaughton/the-only-3-steps-you-need-to-mock-an-api-call-in-jest-39mb)
+- [ES6 Class Mocks](https://jestjs.io/docs/es6-class-mocks#replacing-the-mock-using-mockimplementation-or-mockimplementationonce)
+
+<br />

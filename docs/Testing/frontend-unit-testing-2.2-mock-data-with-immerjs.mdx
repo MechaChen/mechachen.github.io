@@ -1,0 +1,237 @@
+---
+
+sidebar__label: '[Unit Test] 2.2 - 利用 immer.js 輕鬆建立 mock data'
+title: '[Unit Test] 2.2 - 利用 immer.js 輕鬆建立 mock data'
+
+---
+
+## 前言
+
+在我們做測試的時候，常常會需要假資料來幫我們模擬真實的情境，也就是 mock data，像是
+- mock redux state
+- mock api response
+
+<br />
+
+等等情境，而這些情境，需要模擬的 mock data 通常會很龐大，光是要宣告一個假資料就要耗費非常多的時間和精神，而且再加上我們常常會需要大體上一樣的 mock data，只需要修改 1, 2 個 key pair，這是後，就算可以利用複製貼上的方法去修改，回頭再回來維護時，卻也難以閱讀和修改
+
+<br />
+
+這時，我就突然想到之前有看到 redux 利用 `immer.js` 成功解決這問題，Redux toolkit 的發明真的是我的 life saver，讓我使用 Redux 開發時大大減少開發的時間成本，感謝 Redux toolkit 個發明者 [Mark Erikson](https://github.com/markerikson) 🥰🥰
+
+<br />
+
+我們就來簡介一下 `immer.js` 吧
+
+<br />
+
+## `immer.js`
+
+我基於好奇心也稍微了解了一下 `immer.js` 是什麼，原來這套件可以讓我們可以更輕鬆的複製同時改寫 immutable data，而且是用 mutable 的方式撰寫，官網的範例如下：
+
+- 當沒有使用 `immer.js` 時：
+```jsx
+const nextState = baseState.slice() // shallow clone the array
+nextState[1] = {
+    // replace element 1...
+    ...nextState[1], // with a shallow clone of element 1
+    done: true // ...combined with the desired update
+}
+// since nextState was freshly cloned, using push is safe here,
+// but doing the same thing at any arbitrary time in the future would
+// violate the immutability principles and introduce a bug!
+nextState.push({title: "Tweet about it"})
+```
+
+<br />
+
+- 當有 `immer.js` 時：
+```jsx
+import {produce} from "immer"
+
+const nextState = produce(baseState, draft => {
+    draft[1].done = true
+    draft.push({title: "Tweet about it"})
+})
+```
+
+<br />
+
+我們可以使用 `produce` function，傳入一個 callback，然後用類似直接改寫原 array or object 的方式，完成我們之前在 redux 撰寫 reducer 的複雜操作!!!
+
+```ts
+import { createSlice } from '@reduxjs/toolkit'
+import type { PayloadAction } from '@reduxjs/toolkit'
+
+export type CounterStateT = {
+  account: {
+      company: {
+          name: string,
+      }
+  }
+}
+
+const initialState: AccountStateT = {
+  account: {
+      company: {
+          name: '',
+      }
+  }
+  value: 0,
+}
+
+export const accountSlice = createSlice({
+  name: 'account',
+  initialState,
+  reducers: {
+    setCompanyName: (state, action: PayloadAction<string>) => {
+      state.account.company.name = action.payload
+    },
+  },
+})
+
+// Action creators are generated for each case reducer function
+export const { setCompanyName } = accountSlice.actions
+
+export default accountSlice.reducer
+```
+
+(更詳細的教學請見[官網](https://redux-toolkit.js.org/tutorials/quick-start))
+
+<br />
+
+有了這項利器後，我們就可以非常快速的產生複雜的 mock data，如下面例子
+
+
+<br />
+
+## Testing mock data
+
+### mock redux data
+
+以下是我利用 immer.js 撰寫的產生 mock redux data 的 api
+
+```js
+import produce from 'immer';
+
+import { RootState } from '@/redux/store';
+
+type MockStoreFnT = (store: RootState) => void;
+
+const setupStore = (mockReduxState?: PreloadedState<RootState>) => (
+  configureStore({
+    reducer: rootReducer,
+    preloadedState: mockReduxState,
+  })
+);
+
+/**
+ * Generate mock redux state for unit testing.
+ *
+ * @param  {MockStoreFnT} mockStoreFn - a callback function which
+ *   accepts redux initial state as param,
+ *   and use immer.js to get revised redux state
+ *
+ * @return {RootState} new updated redux state instance
+ *
+ * @example
+ * // gen mock redux state with user email
+ * const mockReduxState = genMockReduxState((state) => {
+ *    state.account.profile.email = 'test@testdomain.com';
+ * })
+ */
+
+const genMockReduxState = (mockStoreFn: MockStoreFnT) => {
+  // every time will be new redux state instance
+  const initialState = setupStore().getState();
+  const mockReduxState = produce(initialState, mockStoreFn);
+  return mockReduxState;
+};
+
+export default genMockReduxState;
+
+```
+
+<br /><br />
+
+
+我們就可以利用 `genMockReduxstate` 快速簡潔的產生 redux state
+
+
+```js
+const mockReduxState: AccountStateT = genMockReduxState((state) => {
+    state.account.company.name = 'mock company name';
+});
+```
+
+<br /><br />
+
+這樣是不是比上述簡單的非常多呢 😚😚
+
+
+<br /><br />
+
+
+### mock api response
+
+我們也可以利用 `immer.js` 來產生 mock api response
+
+```jsx
+import produce from 'immer';
+
+const noReviseFn = () => {};
+
+/**
+ * Generate a function which generates mock api response for unit testing,
+ * and we can pass function to update mock api response.
+ *
+ * @param  {ApiResT} defaultMockRes - default api return response
+ *
+ * @return a function which generate specific api default response by default,
+ * and revised api response when we revise some property
+ */
+
+export default function genMockApiResFactory<ApiExampleResT>(
+  defaultMockRes: ApiExampleResT,
+) {
+  return function genMockApiRes(reviseFn: (res: ApiExampleResT) => void = noReviseFn) {
+    return produce(defaultMockRes, reviseFn);
+  };
+}
+```
+
+
+<br />
+
+```typescript
+type ApiExampleResT = {
+   prop1: type1,
+   prop2: type2,
+   prop3: type3,
+}
+ 
+const defaultMockApiExampleRes: ApiExampleResT = {
+  prop1: 'value1',
+  prop2: 'value2',
+  prop3: 'value3',
+}
+
+const genApiExampleRes = genMockApiResFactory<ApiExampleResT>(
+  defaultMockApiExampleRes,
+);
+```
+
+<br />
+
+會大大減少我們撰寫測試程式碼的時間
+
+<br />
+
+## 今天小結
+我們可以利用 Redux toolkit 背後實現的 `immer.js` 套件，幫我們快速建立測試用的 mock redux state, mock api response，讓我們開發 or 維護測試程式碼更加的輕鬆
+
+<br />
+
+### 參考資源
+- [immer.js](https://immerjs.github.io/immer/)
+- [Redux toolkit](https://redux-toolkit.js.org/tutorials/quick-start)

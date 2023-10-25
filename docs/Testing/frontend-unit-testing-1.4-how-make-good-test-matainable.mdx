@@ -1,0 +1,202 @@
+---
+
+sidebar__label: '[Unit Test] 1.4 - 如何做好測試？ - 可維護篇'
+title: '[Unit Test] 1.4 - 如何做好測試？ - 可維護篇'
+
+---
+
+## 前言
+
+關於可維護性的部分，雖然在 AOUT(Art of Unit Testing) 中提到非常多點，但我覺得最受用的一點就是：
+<br />
+
+
+> **避免測試中帶著邏輯 (avoid any logic in your tests)**
+
+<br /><br />
+
+這裡說的**邏輯** 是指實現結果的產品程式碼邏輯，而非常多業界權威也都提倡這點，像是
+
+* [單元測試的藝術](https://www.books.com.tw/products/0010765689) - Section 8.12 避免測試中帶著邏輯
+* [Software engineering at Google](https://software-engineering-at-google.gh.miniasp.com/#/zh-cn/Chapter-12_Unit_Testing/Chapter-12_Unit_Testing?id=dont-put-logic-in-tests-%e4%b8%8d%e8%a6%81%e6%8a%8a%e9%82%8f%e8%bc%af%e6%94%be%e9%80%b2%e6%b8%ac%e8%a9%a6%e4%b8%ad) -  Ch 12 - Don't Put Logic in Tests
+* [React Testing Library Author - Kent C Dodds](https://kentcdodds.com/blog/why-i-never-use-shallow-rendering) - Why I Never Use Shallow Rendering
+
+<br /><br />
+
+如果我們利用邏輯去做測試，就會發生：
+* ❌ 測試很脆弱 (brittle)，重構 (refactor) 就會使其壞掉
+* ❌ 無法給予我們信心，因為跟使用者行為沒有太大關係
+* ❌ 不夠直接，難以閱讀
+
+
+<br /><br />
+
+以下我會提供一些案例，就會有上述的問題，並且會提到如何改善
+
+
+<br />
+
+## 情境一：不要用邏輯運算產出動態結果，使用靜態結果
+
+### ❌ 在期望結果中使用運算邏輯，使預期結果動態產生
+```jsx
+describe('helloFunction', () => {
+    test('by default, should return user name and greeting words', () => {
+        const user = 'USER';
+        const greeting = 'GREETING';
+        
+        const sentence = helloFunction(user, greeting);
+        
+        expect(sentence).toBe(user + greeting);
+    });
+});
+```
+
+儘管使用的邏輯簡單，但是還是有帶著邏輯，就是 `+` 的部分，，這個測試很可能重複了產品程式碼的邏輯，也可能包含這個邏輯中的 bug
+(而且此產品程式碼邏輯和測試程式碼邏輯可能都是由同一個人撰寫，導致對該需求有同樣的錯誤觀念)
+
+<br />
+
+例如，預期結果少了一個空格，產品程式碼也少回傳一個空格，測試卻通過了
+
+<br />
+
+
+### ✅ 在期望結果中使用靜態結果，沒有運算
+```jsx
+describe('helloFunction', () => {
+    test('by default, should return user name and greeting words', () => {
+        const user = 'USER';
+        const greeting = 'GREETING';
+        
+        const sentence = helloFunction(user, greeting);
+        
+        expect(sentence).toBe("USER GREETING");
+    });
+});
+```
+
+因為我們明確的撰寫了我們預期的結果，就不會發生上述的狀況
+
+使用靜態結果的好處有：
+* 預期結果清楚明瞭，不用再去猜測
+* 預期結果固定，不會有不確定性
+
+<br />
+
+
+## 情境二：不要測試實作細節，測試使用者行為
+
+(以下程式碼引用 Kent C Dodds. 的部落格)
+
+```jsx
+import * as React from 'react'
+import {CSSTransition} from 'react-transition-group'
+
+function Fade({children, ...props}) {
+  return (
+    <CSSTransition {...props} timeout={1000} className="fade">
+      {children}
+    </CSSTransition>
+  )
+}
+
+class HiddenMessage extends React.Component {
+  state = {
+      show: this.props.initialShow,
+  },
+  
+  toggle = () => {
+    this.setState(({ show }) => ({ show: !show }));
+  }
+  
+  render() {
+    return (
+      <div>
+        <button onClick={this.toggle}>Toggle</button>
+        <Fade in={this.state.show}>
+          <div>Hello world</div>
+        </Fade>
+      </div>
+    )
+  }
+}
+
+HiddenMessage.defaultProps.initialShow = false;
+
+export {HiddenMessage}
+```
+
+<br /><br />
+
+若我們使用 enzyme (Airbnb 開發的測試套件)，測試程式碼如下：
+
+```jsx
+import * as React from 'react';
+import Enzyme, { shallow } from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+
+import { HiddenMessage } from '../hidden-message'
+
+Enzyme.configure({ adapter: new Adapter() });
+
+test('shallow', () => {
+  const wrapper = shallow(<HiddenMessage initialShow={true} />)
+  expect(wrapper.state().show).toBe(true) // initialized properly
+  wrapper.instance().toggle()
+  wrapper.update()
+  expect(wrapper.state().show).toBe(false) // toggled
+});
+```
+
+<br />
+
+就會發現，大部分是使用 component 的 state 和 method 下去操作的，**但這些使用者根本不 care!!!**
+
+<br /><br />
+
+而且，會產生以下幾個問題：
+1. **我明明就把帶入的 method 名稱寫錯了，但我的測試還是過了**：
+    - 我不小心把 button 的 `onClick` 帶入了 `this.tgogle`，但測試過了，我明明就帶入了錯誤的 function，**讓 user 會使用的按鈕無法正常運作，但是測試卻沒檢查出來**
+
+<br />    
+
+2. **我只是要做個 Refactoring，但是我的測試失敗了**：
+    - 我把 `toggle` 重新命名成 `handleButtonClick`，但是測試失敗了，我明明就只是對我內部實作的 function 重新命名，**不會影響到 user 的使用，但是我的測試卻失敗了**
+
+<br />
+
+
+<br />
+
+這些都不是好的測試應該有的行為：
+* 第 1 點代表我根本**不能信任這個測試**，沒有測出 user 在意的東西
+* 第 2 點代表這個**測試很脆弱 (Brittle)，難以維護**，我只是改了跟 user 沒關的東西，結果就壞了
+
+
+<br /><br />
+
+在 [Software engineering at Google](https://software-engineering-at-google.gh.miniasp.com/#/zh-cn/Chapter-12_Unit_Testing/Chapter-12_Unit_Testing?id=dont-put-logic-in-tests-%e4%b8%8d%e8%a6%81%e6%8a%8a%e9%82%8f%e8%bc%af%e6%94%be%e9%80%b2%e6%b8%ac%e8%a9%a6%e4%b8%ad) 的內容也有提到，要預防脆性測試(Preventing Brittle Tests)，脆性測試是指在面對不相關的程式程式碼變化時失敗的測試，這些變化不會引入任何真正的錯誤
+
+<br />
+
+在只有幾個工程師的小型程式碼庫中，每次修改都要調整一些測試，這可能不是一個大問題。但是，如果一個團隊經常寫脆弱測試，測試維護將不可避免地消耗團隊越來越多的時間，因為他們不得不在不斷增長的測試套件中梳理越來越多的失敗
+
+<br />
+
+最後，團隊可能甚至會決定不撰寫測試，因為測試嚴重干擾了生產效率
+
+
+<br /><br />
+
+## 結論
+不要在測試程式碼中測試 or 使用邏輯，使用靜態結果，才能讓測試不脆弱，並真正執行我們在意的事
+
+
+<br />
+
+### 參考資源
+
+* [單元測試的藝術](https://www.books.com.tw/products/0010765689) - Section 8.12 避免測試中帶著邏輯
+* [Software engineering at Google](https://software-engineering-at-google.gh.miniasp.com/#/zh-cn/Chapter-12_Unit_Testing/Chapter-12_Unit_Testing?id=dont-put-logic-in-tests-%e4%b8%8d%e8%a6%81%e6%8a%8a%e9%82%8f%e8%bc%af%e6%94%be%e9%80%b2%e6%b8%ac%e8%a9%a6%e4%b8%ad) -  Ch 12 - Don't Put Logic in Tests
+* [React Testing Library Creator - Kent C Dodds](https://kentcdodds.com/blog/why-i-never-use-shallow-rendering) - Why I Never Use Shallow Rendering

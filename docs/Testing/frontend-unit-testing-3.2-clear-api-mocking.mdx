@@ -1,0 +1,253 @@
+---
+
+sidebar__label: '[Unit Test] 3.2 - 每個測試都該是獨立的，那些你該清的 api mock data'
+title: '[Unit Test] 3.2 - 每個測試都該是獨立的，那些你該清的 api mock data'
+
+---
+
+
+## 為什麼要清除 mocking api function？
+
+先說最終目的：**避免每個 test case 的結果互相干擾**
+
+在單元測試的藝術中 (Section 8.2.4) 中有提到：
+
+> Laziness in cleanup—If you’re too lazy to clean up your database after testing,
+your filesystem after testing, or your memory-based objects, consider moving to
+a different profession. This isn’t a job for you
+
+<br />
+
+意思就是：
+> 如果你在測試後太懶惰以至於不清理你的數據庫、文件系統或基於內存的對象，那麼考慮轉行。這個工作不適合你
+
+<br />
+
+雖然這句話還蠻重 😱 的，不過也大大凸顯出清除測試資料的重要性，當我們單元測試的測試資料互相干擾時，我們最後測出的結果就不會是準確的，就無法具有 **可信任的** 的特性，那我們做的測試其實就沒有意義了
+
+
+
+<br />
+
+
+## 不同的 clean up utils
+當我們在 mocking api 時，是將 api function 覆寫成 `jest.fn`，接著在 `jest.fn` 客製化我們的 api response
+
+`jest.fn` 會去記錄一些我們 call api 的過程，像是：
+- 呼叫了幾次
+- 呼叫時帶了什麼參數
+
+<br />
+
+這時候，我們就可以利用以下三個 utils 來幫我們清除每個 test cases 不同類型的資料：
+
+- `mock.mockClear()`
+- `mock.mockReset()`
+- `mock.mockRestore()`
+
+這三個 util 各有不同的主要功能，就讓我們來看一下吧～
+
+<br />
+
+
+### `mock.mockClear()`
+
+會覆寫掉 mock api 相關的紀錄，像是 **呼叫的次數**、**產生的實例數量** 等，但不會清除需要引入的 input 或輸出的 output 等條件
+
+
+<table>
+    <thead>
+        <tr>
+            <th align="center">主要目的</th>
+            <th align="center">mock 值</th>
+            <th align="center">是否被移除</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td align="center" rowspan="3">呼叫後相關紀錄</td>
+            <td align="center"><code>mockFn.mock.calls</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mock.instances</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mock.contexts</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center" rowspan="3">模擬 function 行為</td>
+            <td align="center"><code>mockFn.mockImplementation()</code></td>
+            <td align="center">❌</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mockReturnValue()</code></td>
+            <td align="center">❌</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mockResolvedValue()</code></td>
+            <td align="center">❌</td>
+        </tr>
+        <tr>
+            <td align="center">還原 function</td>
+            <td align="center"><code>jest.fn()</code></td>
+            <td align="center">❌</td>
+        </tr>
+    </tbody>
+</table>
+
+
+<br /><br />
+
+### `mock.mockReset()`
+
+會覆寫掉 mock api 相關的紀錄，像是 **呼叫的次數**、**產生的實例數量** 等，也會清除需要引入的 input 或輸出的 output 等條件，把 `jest.fn` 變成 `undefined`
+
+
+<table>
+    <thead>
+        <tr>
+            <th align="center">主要目的</th>
+            <th align="center">mock 值</th>
+            <th align="center">是否被移除</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td align="center" rowspan="3">呼叫後相關紀錄</td>
+            <td align="center"><code>mockFn.mock.calls</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mock.instances</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mock.contexts</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center" rowspan="3">模擬 function 行為</td>
+            <td align="center"><code>mockFn.mockImplementation()</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mockReturnValue()</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mockResolvedValue()</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center">還原 function</td>
+            <td align="center"><code>jest.fn()</code></td>
+            <td align="center">❌</td>
+        </tr>
+    </tbody>
+</table>
+
+
+<br /><br />
+
+### `mock.mockRestore()`
+
+會覆寫掉 mock api 相關的紀錄，像是 **呼叫的次數**、**產生的實例數量** 等，也會清除需要引入的 input 或輸出的 output 等條件，甚至還原成原本的 function，不再是 `jest.fn`
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th align="center">主要目的</th>
+            <th align="center">mock 值</th>
+            <th align="center">是否被移除</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td align="center" rowspan="3">呼叫後相關紀錄</td>
+            <td align="center"><code>mockFn.mock.calls</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mock.instances</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mock.contexts</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center" rowspan="3">模擬 function 行為</td>
+            <td align="center"><code>mockFn.mockImplementation()</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mockReturnValue()</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center"><code>mockFn.mockResolvedValue()</code></td>
+            <td align="center">✅</td>
+        </tr>
+        <tr>
+            <td align="center">還原 function</td>
+            <td align="center"><code>jest.fn()</code></td>
+            <td align="center">✅</td>
+        </tr>
+    </tbody>
+</table>
+
+<br /><br />
+
+
+:::info注意：**此函式在使用 `jest.spyOn` 下才可以使用，一般的 `jest.fn()` 無法使用此函式**
+:::
+
+<br />
+
+
+## 實際使用
+
+在我現在的開發經驗中，我們的情境只需要去清除 **呼叫的相關紀錄**，所以我們選用了 `mock.mockClear` 來作為 clear api 的紀錄，不用另外去清除 api response
+
+以下為實際範例：
+
+
+```js
+describe('ThirdPartySources', () => {
+  beforeEach(() => {
+    mockApiGetUsers.mockResolvedValue(defaultMockApiGetUsers);
+  });
+
+  afterEach(() => {
+    mockApiGetUsers.mockClear();
+  });
+
+  test('when there is no azure, okta is in ad sources, should show refresh status button', async () => {
+    // Act
+    const { findByTestId } = renderWithRedux(<ThirdPartySources></ThirdPartySources>);
+    const refreshBtn = await findByTestId(idBtnConnectionStatus);
+
+    // Assert
+    expect(refreshBtn).toBeVisible();
+  });
+});
+```
+
+<br />
+
+## 結論
+- 知道清除 mock data 的重要性，是為了要保持每個單元測試獨立運作
+- 知道 jest 提供 3 個 util 幫助我們清理 mock data，以實務上來說 `mock.mockClear()` 最常用
+
+<br />
+
+### 參考資訊
+- [Jest - Mock Functions](https://jestjs.io/docs/mock-function-api#mockfnmockclear)
+- [單元測試的藝術](https://www.tenlong.com.tw/products/9787115360359?list_name=c-unit-test)
+
+<br />

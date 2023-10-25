@@ -1,0 +1,451 @@
+---
+
+sidebar__label: '[Unit Test] 1.5 - 如何做好測試？ - 可讀篇'
+title: '[Unit Test] 1.5 - 如何做好測試？ - 可讀篇'
+
+---
+
+## 前言
+可讀性是我認為做測試最重要的一件事，是我最喜歡也覺得最重要的一環，其實應該放在如何做好測試的第一節介紹，甚至我認為在單元測試的藝術書中也是，應該放在可信任和可維護之前，書中也有提到，沒有可讀性，基本上我們的測試也不會有可信任性和可維護性
+
+書中有這麼一段話：
+> 如果你寫的**測試缺乏可讀性，那它們幾乎毫無意義**。可讀性是寫測試的人與幾個月後不得不閱讀這些測試的可憐人之間的連接紐帶。**測試是你對項目下一代程序員講的故事**。它們讓開發者能夠清晰地看到一個應用程序是由什麼構成的，以及它是從哪里開始的
+
+<br />
+
+在 [Software engineering at Google](https://software-engineering-at-google.gh.miniasp.com/#/zh-cn/Chapter-12_Unit_Testing/Chapter-12_Unit_Testing) 也有提到，好的測試可以作為文件，告訴你的同事，這個專案的下一個維護者，甚至幾個月後的你自己，知道這段功能當初是為了什麼目的，幫助大家後續更順利的開發
+(各位可以想像一下沒有人告訴你專案的來龍去脈的痛，你得自己去跟前輩們挨家挨戶的詢問，有時候他們甚至也忘記或不知道當初為什麼要做這個功能)
+
+
+以下我會告訴大家一些撰寫測試常用的模式(pattern)，和一些增加可讀性的小技巧
+
+
+<br />
+
+
+## 測試常用模式
+
+### 撰寫命名的格式：U.S.E pattern
+
+當要命名一個測試案例(test case)，我們可以利用 **U.S.E pattern** 的格式來撰寫，這是由單元測試的藝術作者 Roy Osherove 所提出的命名測試案的的 pattern，U.S.E 分別代表
+* **Unit of Work**： 你的工作單位，像是 function, class, component 等
+* **Scenario**： 我們要測試的情境，通常會以 `when` 開頭，若沒有特殊條件，可以用 by default, alaways 表示預設情境
+* **Expected result**： 我們期待的結果，通常可以用 `should` 開頭
+
+<br />
+
+對於測試的名稱，可以依下列格式去填寫：
+
+```jsx
+describe('<Unit of Work(工作單位)>', () => {
+    test('when <Scenario(情境)>, should <Expected result(預期結果)>', () => {
+        // 你的測試程式碼
+    });
+});
+```
+
+<br />
+
+上述因素缺少任一個都會大大的影響可讀性，讓閱讀測試的人無法了解你的意圖，例如以下的例子：
+
+> 我要測試一個 NameInput 元件，當超出長度限制時，user 打字就不會有反應
+
+
+<br />
+
+以下為實際範例：
+
+```jsx
+describe('NameInput', () => {
+  test(`when typing on input which is already at its name length limit,
+        should keep same input value`, () => {
+    // Arrange
+    const trivialChar = 'a';
+    const maxString = trivialChar.repeat(nameLengthLimit);
+
+    // Act
+    const { getByTestId } = render(<NameInput defaultName={underLimitString}></NameInput>);
+    const input = getByTestId(idNameInput);
+
+    const newString = maxString + trivialChar;
+    fireEvent.change(input, { target: { value: newString }});
+
+    // Assert
+    expect(input).toHaveValue(maxString);
+  });
+});
+```
+
+
+<br /><br />
+
+- 缺少 **Unit of Work**
+
+```jsx
+describe('', () => {
+  test(`when typing on input which is already at its name length limit,
+        should keep same input value`, () => {
+  });
+});
+```
+
+這就應該不用多說了，連要測的對象是什麼都不知道，我怎麼會知道這個測試是為了什麼目的做的
+
+
+<br /><br />
+
+- 缺少 **Scenario**
+
+```jsx
+describe('NameInput', () => {
+  test('should keep same input value', () => {
+  });
+});
+```
+
+缺少了 Scenario，看似還可以讀，但是就是會覺得缺少了點什麼，其實就是我不知道**在什麼情境下會發生這個結果**
+
+
+<br /><br />
+
+- 缺少 **Expected result**
+
+```jsx
+describe('NameInput', () => {
+  test('when typing on input which is already at its name length limit', () => {
+  });
+});
+```
+
+缺少了 Expected result，基本上根本不能算上測試了，我們連要測的結果都不知道，那還用測嗎？
+
+
+<br />
+
+
+有了 **`U.S.E pattern`** 之後，大家應該就可以輕鬆地去命名測試了
+
+
+
+
+<br />
+
+
+### 撰寫測試程式碼的格式：3A pattern
+
+3A pattern 是軟體業界中常被使用到撰寫測試案例的 pattern，這個 pattern 目前沒有明確的起源，但在業界有點資歷的都會認同這個測試的架構，這 3A 分別代表
+
+* **Arrange**：建立你測試需要的變數、物件等
+* **Act**：執行測試
+* **Assert**：斷定測試結果是否符合預期
+
+<br />
+
+同樣可以拿上述範例來解釋
+
+```jsx
+describe('NameInput', () => {
+  test(`when typing on input which is already at its name length limit,
+        should keep same input value`, () => {
+    // Arrange
+    const trivialChar = 'a';
+    const maxString = trivialChar.repeat(nameLengthLimit);
+
+    // Act
+    const { getByTestId } = render(<NameInput defaultName={underLimitString} />);
+    const input = getByTestId(idNameInput);
+
+    const newString = maxString + trivialChar;
+    fireEvent.change(input, { target: { value: newString }});
+
+    // Assert
+    expect(input).toHaveValue(maxString);
+  });
+});
+```
+
+* **Arrange**：準備好要輸入的字串
+* **Act**：執行要測試的所有行為，渲染 NameInput component，並且取得 input，最後觸發 change 事件輸入文字
+* **Assert**：斷定 input 值是否一樣是 maxString
+
+<br />
+
+所有的測試都可以利用此 pattern 去撰寫測試程式碼，同時大大提高可讀性
+
+
+<br />
+
+## 小技巧和注意事項
+剩下的部分，是一些增加可讀性的重要概念
+
+* 一次只關注一個測試點
+* 命名變數
+* 不要濫用 setup & teardown
+* 沒有意義的資訊就什麼都不要說
+
+<br />
+
+
+### 一次只關注一個測試點 (Testing only one concern)
+
+* ❌ 提升測試案例命名難度
+* ❌ 不會一次顯示所有的錯誤
+
+<br />
+
+**❌ 提升測試案例命名難度** <br />
+當我們在撰寫測試時，如果期待一個測試可以檢驗 2 個結果，那我們填寫 Expected result 的部分就會更加困難，可能會因為想把結果都寫出來，而導致測試名稱冗長。或者是為了縮短測試名稱，而寫了一個是用兩種結果的說明，反而造成過度抽象化、過度籠統，嚴重影響可讀性
+
+<br />
+
+**❌ 不會一次顯示所有的錯誤** <br />
+當一次斷定 ( jest `expect`) 2 個結果時，如果前一個 fail 的，就不會接著執行下一個斷定了，那當你修好了第一個，以為測試應該要可以通過時，結果下一個斷定是壞的，一直重複這樣的過程是非常惱人的，也嚴重了影響可維護性 (Maintainable)
+
+<br />
+
+範例如下：
+> 當我們要提交表單按下 submit button 正在 loading 時， button 應該要顯示 loading icon 和被 disabled
+
+<br />
+
+```jsx
+describe('SubmitButton', () => {
+    test('when loading, should show loading icon and disabled', () => {
+        // Arrange
+        const props = { isLoading: true };
+    
+        // Act
+        const { getByTestId } = render(<SubmitButton {...props}></SubmitButton>);
+        const submitBtn = getByTestId('submitBtn');
+        const loadingIcon = getByTestId('loadingIcon');
+    
+        // Assert
+        // ❌ Assert too many thing in a single test case
+        expect(loadingIcon).toBeVisible();
+        expect(submitBtn).toBeDisabled();
+    });
+});
+```
+
+<br /><br />
+
+正確的範例如下：將預期結果拆成 2 部分
+
+```jsx
+describe('SubmitButton', () => {
+    test('when loading, should show loading icon', () => {
+        // Arrange
+        const props = { isLoading: true };
+    
+        // Act
+        const { getByTestId } = render(<SubmitButton {...props}></SubmitButton>);
+        const loadingIcon = getByTestId('loadingIcon');
+    
+        // Assert
+        // ✅ Assert only 1 thing in 1 test case
+        expect(loadingIcon).toBeVisible();
+    });
+
+    test('when loading, should be disabled', () => {
+        // Arrange
+        const props = { isLoading: true };
+    
+        // Act
+        const { getByTestId } = render(<SubmitButton {...props}></SubmitButton>);
+        const submitBtn = getByTestId('submitBtn');
+    
+        // Assert
+        // ✅ Assert 1 thing in 1 test case
+        expect(submitBtn).toBeDisabled();
+    });
+});
+```
+
+<br />
+
+這樣的好處是：
+
+* ✅ 每個測試案例的敘述 & 程式碼變短了，可讀性上升
+* ✅ 當有測試失敗時，我們馬上就知道是哪個結果沒有符合預期，不用猜是這個測試案例的哪個結果失敗
+
+<br />
+
+
+### 命名變數
+
+命名測試程式碼的變數也是一件很重要的事，像是一些帶入的數字，如果沒有良好的變數名稱賦予其意義，其他看這段測試的人會不知道為什麼要帶這個數字
+
+舉例如下，我們在上述 NameInput 的範例，讓最大的字串重複 100 次：
+
+```jsx
+describe('NameInput', () => {
+  test(`when typing on input which is already at its name length limit,
+        should keep same input value`, () => {
+    // Arrange
+    const trivialChar = 'a';
+    const maxString = trivialChar.repeat(100); // ❌ 莫名其妙的數字 100
+
+    // Act
+    const { getByTestId } = render(<NameInput defaultName={underLimitString} />);
+    const input = getByTestId(idNameInput);
+
+    const newString = maxString + trivialChar;
+    fireEvent.change(input, { target: { value: newString }});
+
+    // Assert
+    expect(input).toHaveValue(maxString);
+  });
+});
+```
+
+<br />
+
+其他人第一時間看時，會不知道為什麼要重複 100 次，要不是有良好的上下文輔助，我們才能猜出這個 100 是 NameInput 字數的上限
+
+<br /><br />
+
+改善的方式如下：
+
+```jsx
+describe('NameInput', () => {
+  test(`when typing on input which is already at its name length limit,
+        should keep same input value`, () => {
+    // Arrange
+    const trivialChar = 'a';
+    const maxString = trivialChar.repeat(nameLengthLimit); // ✅ 清晰有意義的名稱
+
+    // Act
+    const { getByTestId } = render(<NameInput defaultName={underLimitString} />);
+    const input = getByTestId(idNameInput);
+
+    const newString = maxString + trivialChar;
+    fireEvent.change(input, { target: { value: newString }});
+
+    // Assert
+    expect(input).toHaveValue(maxString);
+  });
+});
+```
+<br />
+
+這樣就可以有效提高可讀性了
+
+
+
+<br />
+
+
+### 不要濫用 setup & teardown
+
+在單元測試中，Setup 和 Teardown 方法可能被濫用到讓測試或這些方法變得難以閱讀。通常情況下，Setup 方法的情況比 Teardown 方法要糟糕得多
+
+
+<br />
+
+以下是實際範例，來測試一個 submit button，是我在公司真實遇到的例子：
+
+```jsx
+describe('SubmitButton', () => {
+    let renderResult;
+
+    beforeEach(() => {
+        const props = { isLoading: true };
+        
+        renderResult = render(<SubmitButton {...props}></SubmitButton>);
+    });
+
+    test('when loading, should show loading icon', () => {
+        // Act
+        const { getByTestId } = renderResult;
+        const loadingIcon = getByTestId('loadingIcon');
+    
+        // Assert
+        expect(loadingIcon).toBeVisible();
+    });
+
+    test('when loading, should be disabled', () => {
+        // Act
+        const { getByTestId } = renderResult;
+        const submitBtn = getByTestId('submitBtn');
+    
+        // Assert
+        expect(submitBtn).toBeDisabled();
+    });
+});
+```
+
+為了減少共用的程式碼，將 `Arrange` 的部分和 `Act` 中 `render` 的部分放在 `beforeEach` 裡，使得這段程式碼仔每個測試前都會先執行，乍看下優化了 test code，但實際上造成不少問題：
+
+* ❌ 我如果是查閱測試的人，我會不知道到前面做了什麼預設動作，我還要去 `beforeEach` 的部分查看，如果有好幾層的 `beforeEach`，這種狀況會更嚴重，大大降低可讀性
+
+<br />
+
+比較好的做法應該是：
+
+* ✅ 建立一個名稱清晰的 function，清楚地說明我產生了什麼資料，或執行了什麼動作，例如
+
+```jsx
+const renderLoadingButton = () => render(<SubmitButton isLoading={true}></SubmitButton>);
+
+describe('SubmitButton', () => {
+    let renderResult;
+
+    test('when loading, should show loading icon', () => {
+        // Act
+        const { getByTestId } = renderLoadingButton();
+        const loadingIcon = getByTestId('loadingIcon');
+    
+        // Assert
+        expect(loadingIcon).toBeVisible();
+    });
+
+    test('when loading, should be disabled', () => {
+        // Act
+        const { getByTestId } = renderLoadingButton();
+        const submitBtn = getByTestId('submitBtn');
+    
+        // Assert
+        expect(submitBtn).toBeDisabled();
+    });
+});
+```
+
+這樣的做法會相對可讀很多。在單元測試的書中，作者也提到：
+> 為了保持可維護性，我多次寫過完整的測試類，它們沒有 Setup 方法，只有從每個測試中調用的輔助方法。這些類仍然是可讀和可維護的
+
+<br />
+
+所以可以的話，盡可能不寫 Setup，將所有測試程式碼直接寫在 test case 中
+<br />
+
+<br />
+
+
+### 沒有意義的資訊就什麼都不要說
+沒有意義的資訊會干擾閱讀測試的人，會混淆資訊，降低可讀性，如果是不需要的資訊，請一定要刪除
+
+<br />
+
+## 結論
+
+1. 利用以下測試常用 pattern，可以幫你的測試建立強壯可讀的架構
+* 撰寫命名的格式：U.S.E pattern
+* 撰寫測試程式碼的格式：3A pattern
+
+<br />
+
+2. 加上一些觀念和小技巧，可以讓你的測試清晰可讀
+* 一次只關注一個測試點
+* 命名變數
+* 不要濫用 setup & teardown
+* 沒有意義的資訊就什麼都不要說
+
+
+<br />
+
+### 參考資訊
+
+* [單元測試的藝術](https://www.books.com.tw/products/0010765689)
+
+
+<br /><br />

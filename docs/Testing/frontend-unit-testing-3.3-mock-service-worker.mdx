@@ -1,0 +1,402 @@
+---
+
+sidebar__label: '[Unit Test] 3.3 - 測試 api 與 React Query 的最佳幫手 - MockServiceWorker'
+title: '[Unit Test] 3.3 - 測試 api 與 React Query 的最佳幫手 - MockServiceWorker'
+
+---
+
+## 前言
+
+在前述 [3.1 - 與 api 的測試](./frontend-unit-testing-3.1-test-with-api) 有提到 api 的測試，其實要在每個測試都去 mock api data 是件非常繁瑣的事，而且針對同一個 component，常常會需要 mock 相同的 api data，這樣便大大減少了**可維護性**
+
+再加上現在因應 `React Query` 等 Server state management tool 的出現，這種測試方法變得很困難，甚至會需要直接去 mock `React Query` 所提供的 hook 來進行 mock api data 的動作，相對的非常不直覺很多，我們希望僅 mock 我們需要的 api data 部分，而不是整個 hook
+
+所以，針對上述 2 個案例，我們就出現了 `Mock Service Worker` 來幫我們解決上述問題，以下會針對上述 2 點：
+- 常常重複 api data mocking
+- 難以 mock React Query result
+
+來進行細部解說
+
+<br />
+
+## 常常重複 api data mocking
+
+當我們在 mock api 時，有一些問題，例如：
+- 測試不同的 component 時，假設用到同一隻 api，我們會需要重新 mock api，
+( 雖然可以把 mock api 放在  `/__mock__`  底下來避免重複撰寫，但是目前會有 Typescript 的型別問題 )
+- 若有一個 custom hook 會去打 api，當我們在測試 custom hook 時，已經撰寫了一次 mock api，當在測試使用該 custom hook 的 component，我們必須在測試該 component 時重新撰寫一次 mock api，造成維護上不是很方便
+
+
+<br />
+
+### Functional component
+
+- Functional component product code
+
+```jsx
+const useUserLocations = () => {
+	const [userLocations, setUserLocations] = useState();
+
+	const fetchUserLocations = async () => {
+		const users = await apiGetUsers();
+		const locations = users.map((user) => user.location);
+		return locations;
+	} 
+
+	useEffect(() => {
+		fetchUserLocations()
+			.then((locations) => {
+				setUserLocations(locations);
+			})
+			.catch(...)
+	}, []);
+	
+	return userLocations;
+};
+```
+
+<br />
+
+- Functional component testing code
+
+```jsx
+describe('useFetchUserLocations', () => {
+	test('by default, should return an array containing users locations', () => {
+		// Arrange
+		apiGetUser.mockResolvedValue([
+			{ name: 'Alen', location: 'America' },
+			{ name: 'Benson', location: 'Taiwan' },
+			{ name: 'Camillie', location: 'French' },
+		]);
+
+		// Act
+		const { result } = renderHook(() => useFetchUserLocation());
+
+		// Assert
+		expect(result.current).toEqual(['American', 'Taiwan', 'French']);
+	});
+});
+```
+
+<br />
+
+
+### Class Component
+
+- Class component product code
+
+```jsx
+// component's code & Testing
+
+import useUserLocations from '@/hooks/useUserLocations';
+
+const UserStatic = () => {
+	const userLocations = useUserLocations(); // using the hook above
+
+	return (...); // pretended this render a pie chart with label
+};
+```
+
+<br />
+
+- Class component testing code
+
+```jsx
+describe('UserStatic', () => {
+	test('when users exist and have locations, should show location label', () => {
+		// Arrange
+		apiGetUser.mockResolvedValue([
+			{ name: 'Alen', location: 'America' },
+			{ name: 'Benson', location: 'Taiwan' },
+			{ name: 'Camillie', location: 'French' },
+		]); // mock the same value again !!
+
+		// Act
+		const { getByTestId } = render(<UserStatic />);
+		const labelAmerica = getByTestId('label-America');
+
+		// Assert
+		expect(labelAmerica).toBeVisible();
+	});
+});
+```
+
+<br />
+
+上述是我們在對 hook 和 component 要做 mock api data 的部分，如果每個 test case 都需要這樣重複撰寫 api data，則會變得非常繁瑣
+
+
+<br />
+
+## 問題：難以 mock `React Query` data
+
+我在研究如何測試 React Query 的時，發現 React Query 其實沒那麼好測試，因為他已經是一個封裝好的 hook，內部有很多我不清楚的實現方式，想要利用 mock axios 的方式來對使用 React Query 的工作單位來做測試也沒這麼容易，通常需要不少奇淫技巧
+
+我花了一番時間研究後，忽然發現一篇文章( [Stop mocking fetch by Kent C. Dodds](https://kentcdodds.com/blog/stop-mocking-fetch) )有寫到如何解決這問題，就是與其在測試檔案一次次的撰寫 mock api，我們其實可以去偽造整個 api service !!!
+
+我們就可以讓我們的 unit test 真的去打 api，但是打的是 mock service worker 提供的 api，而這些假的 service 會集中管理這些 api，這樣可以避免我們多次在測試檔寫 mock api，也方便我們統一管理所有的假 api
+
+
+<br />
+
+## MSW 簡介
+
+
+MSW 的全名是 Mock Service Worker，就是可以讓我們偽造 service worker，讓我們的測試程式碼可以依照原本的流程去打 api，但會被 msw 處理，而回傳我們自己偽造的結果
+
+設定方法如下：
+
+```jsx
+import { rest } from 'msw' // msw supports graphql too!
+import * as users from './users'
+
+const handlers = [
+  rest.get('/users', async (req, res, ctx) => {
+    const users = [
+		{ name: 'Alen', location: 'America' },
+		{ name: 'Benson', location: 'Taiwan' },
+		{ name: 'Camillie', location: 'French' },
+	];
+    return res(ctx.json(users));
+  }),
+  rest.post('/users', async (req, res, ctx) => {
+    if (req.name && req.email && req.location) {
+	    return res(
+		    ctx.staus(200)
+		    ctx.json({ success: true })
+		);
+    }
+  }),
+];
+
+export { handlers };
+```
+
+```jsx
+// test/server.js
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
+import { handlers } from './server-handlers'
+
+const server = setupServer(...handlers)
+export { server, rest };
+```
+
+```jsx
+// test/setup-env.js
+// add this to your setupFilesAfterEnv config in jest so it's imported for every test file
+import {server} from './server.js'
+
+beforeAll(() => server.listen())
+// if you need to add a handler after calling setupServer for some specific test
+// this will remove that handler for the rest of them
+// (which is important for test isolation):
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
+```
+
+<br />
+
+而且 msw 更大的好處是，因為內部實作是靠 msw 作者自己去覆寫掉整個 Node.js 的 `fetch`, `axios` 和 `XMLHttpRequest`，
+不是真的架一個 mock server，所以也可以直接使用在 CICD 的流程，不需要另外設定
+
+<br />
+
+<br />
+
+### 使用 MSW 會遇到的問題
+
+當我們在撰寫測試時，有時候會希望我們呼叫 api 時有沒有帶正確的參數
+
+```jsx
+const useUser = (userUuid) => {
+	const [userLocations, setUserLocations] = useState();
+
+	const fetchUser = async () => {
+		const user = await apiGetUser(userUuid);
+		return user;
+	};
+
+	useEffect(() => {
+		fetchUserLocations()
+			.then((locations) => {
+				setUserLocations(locations);
+			})
+			.catch(...)
+	}, []);
+	
+	return userLocations;
+};
+
+const apiGetUser = jest.fn();
+
+test('when passed user uuid, should call apiGetUser with the same user uuid', () => {
+	// Act
+	const { result } = render(() => useUser('mockUserUuid'));
+
+	// Assert
+	expect(apiGetUser).toHaveBeenCalledWith('mockUserUuid');
+});
+```
+
+<br />
+
+但在使用 mock service worker 時，我們不需要去 mock api function，
+所以我們無法監控 api function 被呼叫時代入的參數，這時我們要怎麼測試呢？
+
+<br />
+
+其實就是跟真實後端在做的時一樣！ 將不同的輸入值回傳不同的輸入結果！
+
+```jsx
+import { rest } from 'msw' // msw supports graphql too!
+import * as users from './users'
+
+const handlers = [
+  rest.get('/user/:uuid', async (req, res, ctx) => {
+
+	if (req.uuid) {
+		const user = {
+			name: 'Alen',
+			email: 'alen@gmail.com',
+			location: 'America',
+		};
+		return res(
+			ctx.status(200),
+			ctx.json(user)
+		)
+	} else {
+		return res(
+			ctx.status(404),
+			ctx.json({ error: 'User not found' }),
+		)
+	}
+  }),
+];
+
+export { handlers };
+```
+
+<br />
+
+
+所以，我們應該**重新思考我們偽造 api 的目的**，讓測試更像我們真實使用的情境，用 msw 就不會感覺受到約束和不自由了
+
+
+<br />
+<br />
+
+## 輕鬆測試 `React Query`
+
+另外值得一提的是，最近有新的 fetch api 的機制，稱作 swr (stale while revalidate)，像是最近比較火紅的
+- React Query
+- RTK Query
+- SWR
+
+<br />
+
+都是採用這種機制，且使用上都是用 hook 封裝起來後去打 api，已經不再是單純的 api function 了，我們就要針對 hook 去做 mocking，並不是一個很理想的方式
+
+
+
+```jsx
+// Testing with swr by manual mock hook
+
+import useSWR from 'swr';
+import { render } from '@/utils/testing/render';
+
+import UserStatic, { idUserNumber } from './_userStatic';
+
+jest.mock('swr', () => jest.fn());
+
+describe('UserStatic', () => {
+	test('when users data exist, should show correct users number', async () => {
+		// Arrange
+		const users = [
+			{ name: 'Alen', email: 'alen@trendmicro.com', },
+			{ name: 'Benson', email: 'benson@trendmicro.com' },
+			{ name: 'Camillie', email: 'camillie@trendmicro.com' },
+		];
+	
+		useSWR.mockResolvedValueOnce({
+			data: users,
+			isLoading: false,
+		});
+	  
+		// Act
+		const { findByTestId } = render(<UserStatic />);
+		const userNumber = await findByTestId(idUserNumber);
+	  
+		// Assert
+		expect(userNumber).toHaveTextContent('3');
+	});
+});
+```
+
+<br /><br />
+
+若我們使用 msw 去 mock api service 的話，我們就可以跟一般 mock api 的方式一樣，
+而不用去特別 mock msw 了
+
+```jsx
+// handlers.js
+
+import { rest } from 'msw';
+
+export const handlers = [
+	rest.get('/users/:uuid', (req, res, ctx) => {
+		const users = [
+			{ name: 'Alen', email: 'alen@trendmicro.com', },
+			{ name: 'Benson', email: 'benson@trendmicro.com' },
+			{ name: 'Camillie', email: 'camillie@trendmicro.com' },
+		];
+	
+		return res(
+			ctx.status(200),
+			ctx.json(users),
+		);
+	}),
+];
+
+export default {};
+```
+
+```jsx
+// Testing with swr by manual mock hook
+
+import useSWR from 'swr';
+import { render } from '@/utils/testing/render';
+import UserStatic, { idUserNumber } from './_userStatic';
+
+
+jest.mock('swr', () => jest.fn());
+
+
+describe('UserStatic', () => {
+	test('when users data exist, should show correct users number', async () => {
+		// Act
+		const { findByTestId } = render(<UserStatic />);
+		const userNumber = await findByTestId(idUserNumber);
+	  
+		// Assert
+		expect(userNumber).toHaveTextContent('3');
+	});
+});
+```
+
+<br />
+
+## 結論
+- 我們可以利用 msw 來解決常常需要重複 mock api response 的問題，增加 **可維護性**
+- msw 也可以幫我們輕鬆的處理 React Query 的測試，不用去另外 mock `useQuery` hook
+
+
+<br />
+
+
+### 參考資源
+
+- [Kent C. Dodds - Stop mocking fetch](https://kentcdodds.com/blog/stop-mocking-fetch)
+- [msw](https://mswjs.io/)
+
+<br />
