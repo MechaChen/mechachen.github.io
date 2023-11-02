@@ -1,0 +1,145 @@
+---
+sidebar_label: '[DNS] 2. 網路世界運作原理 & 本地 DNS cache'
+title: '[DNS] 2. 網路世界運作原理 & 本地 DNS cache'
+tags:
+  - DNS
+
+---
+
+今天會延續 DNS 的部分，正式來解釋 DNS 如何運作，和如何優化
+
+<br />
+
+## DNS 原理解釋
+
+### Internet 與 IP address
+
+在解釋 DNS 前，讓我們先來簡單介紹一下網路世界怎麼溝通的
+
+
+在網路的世界中，電腦是依靠數據 (digits) 來溝通的，而在網路世界，電腦透過 IP address 辨識 (identify) 對方和對方溝通
+
+<figure>
+  <img
+    width="350"
+    src="https://ithelp.ithome.com.tw/upload/images/20231001/20148944ySvpDGeV6B.png"
+    alt="Computer communication with IP address"
+  />
+  <figcaption>
+  
+    (圖片來源：<a href="https://www.youtube.com/watch?v=mpQZVYPuDGU" target="_blank/">PowerCert Animated Videos
+</a> )
+  </figcaption>
+</figure>
+
+<br /><br />
+
+但在人類的世界中，我們是依靠語言來溝通的，我們透過名字來辨識對方和對方溝通
+
+<figure>
+  <img
+    width="350"
+    src="https://ithelp.ithome.com.tw/upload/images/20231001/201489443FHGZuzR3e.png"
+    alt="Computer communication with IP address"
+  />
+  <figcaption>
+  
+    (圖片來源：<a href="https://www.youtube.com/watch?v=mpQZVYPuDGU" target="_blank/">PowerCert Animated Videos
+</a> )
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+因此，若人要辨識電腦且與電腦溝通，為了方便性，我們希望電腦的 IP address 可以轉換成可識別的名字，也就是 domain name，而將 domain name 轉換成 IP address，就需要 DNS (Domain Name System) 幫我們做轉換
+
+
+<br />
+
+<br />
+
+### 本地快取查找 (DNS local cache)
+
+在本地，包括我們下載的 chrome 瀏覽器，和我的作業系統，都會幫我們緩存 (cache) 曾經利用 DNS 查到對應 domain 的 ip address
+
+<br />
+
+#### 檢查 Browser 的 DNS cache
+
+在瀏覽器中，輸入 chrome://net-internals#DNS ，就可以查找我們自己本地的瀏覽器，是否有 cache 該 domain 解析出的 ip address，例如，當我們查找 google.com
+
+![https://ithelp.ithome.com.tw/upload/images/20231001/201489441ogwsQ29pj.png](https://ithelp.ithome.com.tw/upload/images/20231001/201489441ogwsQ29pj.png)
+
+就會顯示 
+```
+Resolved IP addresses of "google.com": ["142.250.207.14"].
+```
+
+對應 google.com 的 IP address 為 142.250.207.14
+
+<br />
+
+#### 檢查 Operating System 的 DNS cache
+
+在本地作業系統中，也會緩存 DNS 的查找結果，我們可以在 terminal 輸入以下指令
+```bash
+nslookup <your domain>
+```
+
+
+例如
+```bash
+nslookup google.com
+```
+
+<br />
+
+就會出現以下結果
+![https://ithelp.ithome.com.tw/upload/images/20231001/2014894404ppcgbZ9f.png](https://ithelp.ithome.com.tw/upload/images/20231001/2014894404ppcgbZ9f.png)
+
+其中最上層的部分，為`本地 DNS server` 的資訊：
+
+1. **Server: 192.168.31.1**:
+   這一行告訴你你的本地 DNS 伺服器的 IP 地址。當你的系統需要解析一個網域名稱（例如 `google.com`）時，它會首先聯絡這個本地 DNS 伺服器。
+
+2. **Address: 192.168.31.1#53**:
+   這一行再次顯示了你的本地 DNS 伺服器的 IP 地址，並附加了 `#53`，表示這個伺服器正在使用標準 DNS 端口 53 來接收查詢。端口 53 是 DNS 協議的標準端口。
+
+這些信息告訴你，當你的系統需要解析網域名稱時，它會首先聯絡位於 `192.168.31.1` 的本地 DNS 伺服器，並通過端口 53 發送 DNS 查詢。這個本地 DNS 伺服器可能是你的路由器或你的網路提供商（ISP）提供的，它會有自己的緩存，並且可能會向其他 DNS 伺服器轉發查詢以獲得解析結果
+
+<br /><br />
+
+下面的資訊，為查詢網域的 `DNS lookup` 結果：
+
+1. **Non-authoritative answer**:
+   這表示返回的答案不是來自網域名稱的授權 DNS 伺服器，而是來自某個緩存伺服器。這通常意味著你正在看到的是一個緩存的答案，它可能是在稍早前某個時間點由授權伺服器提供的
+
+2. **Name: google.com**:
+   這是你查詢的網域名稱
+
+3. **Address: 142.250.207.14**:
+   這是 `google.com` 網域名稱解析到的 IP 地址。當你在瀏覽器中輸入 `google.com` 時，你的電腦會使用這個 IP 地址來連接到 Google 的伺服器。
+
+<br />
+
+這個 `nslookup` 的結果基本上告訴你，當你試圖訪問 `google.com` 時，你的電腦將嘗試連接到 IP 地址 `142.250.207.14`。這個特定的 IP 地址可能會隨時間而變化，因為大型網站如 Google 會使用多個伺服器和 IP 地址來處理流量，並可能會基於負載均衡和其他因素而更改 DNS 解析
+
+
+<br /><br />
+
+
+## 結論
+1. 為了利用可讀的 domain name 找到對應的 ip address，我們需要 DNS
+2. 在 local 的 Browser 和 OS 中，都可能存有 DNS result 得快取，讓我們可以快速取得 domain name
+
+
+<br />
+
+### 參考資訊
+- [稀土掘金 - 面试装X：深入理解 DNS 解析](https://juejin.cn/post/7105387310698463263#heading-12)
+- [稀土掘金 - DNS 解析优化](https://juejin.cn/post/7221792648541536317#heading-1)
+- [ByteByteGo - Everything You Need to Know About DNS: Crash Course System Design #4](https://www.youtube.com/watch?v=27r4Bzuj5NQ)
+- [PowerCert Animated Videos - How a DNS Server (Domain Name System) works.](https://www.youtube.com/watch?v=mpQZVYPuDGU)
+
+<br />

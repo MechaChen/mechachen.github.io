@@ -1,0 +1,148 @@
+---
+sidebar_label: '[DNS] 1. 為什麼前端要知道 DNS & request 效能監控'
+title: '[DNS] 1. 為什麼前端要知道 DNS & request 效能監控'
+tags:
+  - DNS
+
+---
+
+## 前言
+
+當在往成為更好的前端的路上，通常都會看到一些文章，講述我們需要的一些網路常識，包括：
+- DNS
+- HTTP / HTTP2 / HTTPS
+- CDN
+- CORS
+- TCP/IP
+
+都是我們在前端這條路上，不管是各位前端大佬，或是眾多的面試文章，常常會看到的網路常識主題。而在做了四年前端後，再加上現在的資安公司主要使用 AWS, Azure 的雲端服務，當我們要去做相關的設定時，的確常常會看到跟這些網路常識有關的關鍵字
+
+所以，讓我們來開始認識網路常識，來成為更厲害的前端吧～
+
+<br /><br />
+
+今天網路常識的第一篇就是 **DNS** (Domain Name System)~
+
+然後，我描述的方式，會從：
+1. 為什麼前端需要理解 DNS
+2. DNS 的運作過程
+3. 如何優化
+4. 部署與 DNS
+
+以這循序漸進的三個主題來描寫文章
+
+
+<br />
+
+
+## 為什麼前端需要理解 DNS?
+
+> **1. 可以瞭解造成網路請求變慢的原因之一**
+
+DNS 也是在進行網路請求的必經過程之一，透過瞭解 DNS，我們可以多了解一個造成網路請求變慢的原因，和如何透過優化 DNS 的方式加速 network request，大幅降低 user 等待的時間
+
+<br />
+
+
+> **2. 可以在前端優化 DNS 解析，加速網路請求**
+
+在前端，當我們透過 monitor 的方式察覺到 DNS 造成 network request 的時間過長時，我們可以透過在 HTML 另外加入設定來進行優化，下面會再詳細做說明
+
+<br />
+
+> **3. 對前端部署網頁資源的過程更瞭解**
+
+當我們要去部署前端網站資源時，會需要進行將 domain name 指向 ip address 的操作（例如 `mechachen.github.io` -> `185.199.108.153`)，而這中間就是 DNS 的操作，如果對 DNS 概念有更深層的瞭解，可以幫我們更瞭解資源部署上「為什麼」要做某些設定
+
+<br />
+<br />
+
+
+## 從 Chrome DevTool 瞭解 network 為什麼很慢？
+
+在我們進行網路請求時，其實 Chrome DevTool 會告訴你請求的時間歷程，如圖所示：
+
+![https://ithelp.ithome.com.tw/upload/images/20231001/20148944Z1heEjSGOB.png](https://ithelp.ithome.com.tw/upload/images/20231001/20148944Z1heEjSGOB.png)
+
+
+可以透過
+1. 打開 Chomre Devtool，切換到 Network tab
+2. 選取特定的 request，並切換到 Timing tab
+
+<br /><br />
+
+就可以看到請求的時間歷程，跟每段歷程所花費的時間了，從這裡我們可以看到：
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">任務類型</th>
+      <th align="left">任務</th>
+      <th align="left">花費時間</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left" rowspan="3">Connection Start (建立連接)</td>
+      <td align="left">DNS lookup</td>
+      <td align="left">1.57 s</td>
+    </tr>
+    <tr>
+      <td align="left">Initial connection (建立 TCP 連接)</td>
+      <td align="left">341.95 s</td>
+    </tr>
+    <tr>
+      <td align="left">SSL (SSL/TSL 握手)</td>
+      <td align="left">341.95 s</td>
+    </tr>
+    <tr>
+      <td align="left" rowspan="3">Request/Response</td>
+      <td align="left">Request sent (發送請求)</td>
+      <td align="left">0.19 ms</td>
+    </tr>
+    <tr>
+      <td align="left">Waiting for server response (等待 Server 回應)</td>
+      <td align="left">425.89 s</td>
+    </tr>
+    <tr>
+      <td align="left">Content Download (下載內容)</td>
+      <td align="left">0.64s</td>
+    </tr>
+  </tbody>
+</table>
+
+<br /><br />
+
+而下一篇會針對 DNS lookup 這段，來進行背後原理說明跟如何優化
+
+<br /><br />
+
+
+:::info 工作小撇步：
+
+當 Waiting for server response 過久時，你就可以開噴你們家的後端了（誤
+:::
+
+
+<br />
+
+## 結論
+1. 知道為什麼要瞭解 DNS，可以幫助你了解其中一部分的 request 緩慢問題，而從中優化
+2. 知道為什麼要了解 DNS，跟前端資源部署有關
+3. 知道如何監控 request 效能，及每個階段的花費時長
+
+
+
+<br /><br />
+
+
+### 參考資訊
+- [稀土掘金 - 面试装X：深入理解 DNS 解析](https://juejin.cn/post/7105387310698463263#heading-12)
+- [稀土掘金 - DNS 解析优化](https://juejin.cn/post/7221792648541536317#heading-1)
+- [ByteByteGo - Everything You Need to Know About DNS: Crash Course System Design #4](https://www.youtube.com/watch?v=27r4Bzuj5NQ)
+- [PowerCert Animated Videos - How a DNS Server (Domain Name System) works.](https://www.youtube.com/watch?v=mpQZVYPuDGU)
+
+
+<br />
