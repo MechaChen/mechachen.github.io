@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkbenson_doc=self.webpackChunkbenson_doc||[]).push([[3064],{187:e=>{e.exports=JSON.parse('{"label":"facebook","permalink":"/zh-tw/blog/tags/facebook","allTagsPath":"/zh-tw/blog/tags","count":1,"unlisted":false}')}}]);
