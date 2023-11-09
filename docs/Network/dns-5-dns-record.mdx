@@ -1,0 +1,299 @@
+---
+sidebar_label: '[DNS] 5. 什麼是 DNS record？ 網路世界的電話簿紀錄'
+title: '[DNS] 5. 什麼是 DNS record？ 網路世界的電話簿紀錄'
+tags:
+  - DNS
+
+---
+
+## 前言
+
+我們之前有提到，DNS 會幫我們把 Domain name 指向 IP address，其實 DNS 的本質就像電話簿，裡面有各項紀錄 (Record)，如果我們有了名字(相當於 DNS 的 domain name)，就可以知道對方的聯絡方式，例如電話(相當於 DNS 的 IP address)，如下表：
+
+|  | 名稱 | 聯絡方式 |
+| --- | --- | --- |
+| 真實世界 | 必勝客 | 28825252 |
+| 網路世界 | trendmicro.com | 216.104.20.24 |
+
+<br /><br />
+
+DNS record 就會幫我們紀錄每個網域名稱對應到的聯絡資訊，但有時候不一定是 IP address，有可能是另一個網域 (CNAME)，還有其他不同類型的紀錄，常見的如下：
+
+<br /><br />
+
+<table>
+  <thead>
+    <tr>
+      <th>類型</th>
+      <th>Record type</th>
+      <th>功能</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="5">常見類型</td>
+      <td>A Record</td>
+      <td>域名指向 IPv4 address</td>
+    </tr>
+    <tr>
+      <td>AAAA Record</td>
+      <td>域名指向 IPv6 address</td>
+    </tr>
+    <tr>
+      <td>SOA Record</td>
+      <td>負責人是誰</td>
+    </tr>
+    <tr>
+      <td>NS Record</td>
+      <td>是哪台機器管理你家的 DNS 資訊</td>
+    </tr>
+    <tr>
+      <td>SRV Record</td>
+      <td>更細節的 record</td>
+    </tr>
+    <tr>
+      <td rowspan="3">Mail 相關</td>
+      <td>MX Record</td>
+      <td>收信處</td>
+    </tr>
+    <tr>
+      <td>PTR Record</td>
+      <td>IP 指向域名</td>
+    </tr>
+    <tr>
+      <td>TXT Record</td>
+      <td>純文字，user 可以自定義屬性去自由使用</td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
+
+
+<br /><br />
+
+通常我們最需要瞭解的，就是 A Record、CNAME Record，但其他也還有一些還算常見的 Record 類型，以下我們就來一一介紹吧～
+
+<br />
+
+## 常見 Record 類型
+
+### `A Record` & `AAAA Record` - 將域名指向 IP address
+
+| TYPE | NAME | VALUE | TTL |
+| --- | --- | --- | --- |
+| A | example.com | 12.34.56.78 | 7200 |
+
+<br />
+
+所謂的 **A Record**，就是將 domain 指向 IP address 的紀錄，A Record 會有 4 個描述欄位，基本上大部分的 DNS Record 都採用上述 4 個欄位來描述該 Record：
+- **TYPE**: Record 類型
+- **NAME**: 輸入的 domain name
+- **VALUE**: domain name 指向的 IPv4 address
+- **TTL**: Time To Live，也就是此 DNS record cache 的存活時間，以秒為單位
+
+<br /><br />
+
+> 那上述提到 A Record 只能指向 IPv4 address，那 IPv6 呢？
+
+<br />
+
+所以 DNS 也有一個 Record 類型是來描述 IPv6 的 address，也就是 **AAAA Record (quad A Record)**，就可以幫助我們解決想要指向 IPv6 address 的問題
+
+
+<br />
+
+### `CNAME Record` - 域名指向域名
+
+| TYPE | NAME | VALUE | TTL |
+| ---- | ---- | ----- | --- |
+| CNAME | bar.example.com | foo.example.com | 32600 |
+
+<br />
+
+`CNAME Record`，也就是 Conical Name Record，中文翻做「真實紀錄名稱」，Conical 有「規範」的意思
+
+CNAME 的 NAME 的部分，就是我們輸入的 domain name，VALUE 就是我們要指向的另一個 domain name
+
+<br />
+
+通常 CNAME 的用途有以下 2 種：
+- subdomain 的指向
+- CDN domain 的指向
+
+<br />
+
+#### Subdomain 的指向
+
+**1. WWW (World Wide Web) 的指向**
+
+| TYPE | NAME | VALUE | TTL |
+| ---- | ---- | ----- | --- |
+| CNAME | www.example.com | example.com | 32600 |
+
+<br /><br />
+
+通常，我們的網址結構如下：
+
+![https://ithelp.ithome.com.tw/upload/images/20231004/20148944NfDQI2edH9.png](https://ithelp.ithome.com.tw/upload/images/20231004/20148944NfDQI2edH9.png)
+
+<br />
+
+由上圖所示：
+- `.` 的部分是 Root domain
+- `.com` 的部分是 Top Level Domain
+- `example` 的部分是 2nd Level Domain
+- `www.` 的部分是 sub domain
+
+<br />
+
+所以，如果要讓 user 從 www.example.com 進入我們的 server，就需要另外設定 CNAME
+
+
+<br /><br /><br />
+
+**2. 多功能的單一伺服器的設定**
+
+| TYPE | NAME | VALUE | TTL |
+| ---- | ---- | ----- | --- |
+| CNAME | ftp.example.com | example.com | 32600 |
+
+<br />
+
+<figure>
+  <img src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944sNWrKhBhh0.png" />
+</figure>
+
+
+<br />
+
+當我們只有一台 server，但會利用此 server 提供多項服務時，就可以在原 server domain 前加入描述功能的 sub domain，以方便做功能的區分，但實際上都是導向同一個 server
+
+<br /><br /><br />
+
+
+#### CDN 的指向
+
+| TYPE | NAME | VALUE | TTL |
+| ---- | ---- | ----- | --- |
+| CNAME | hello.benson-chen.com | d70ti4o1uqq3e.cloudfront.net | 32600 |
+
+<br />
+
+在 AWS Cloudfront，也就是 AWS 提供的 CDN 服務中，會先給一個預設的 domain name，如上述就是 d70ti4o1uqq3e.cloudfront.net。
+
+<br />
+
+這樣的話，我們就不用知道 CDN Server 的 IP address，可以將我們的 domain 指向到這個 domain name，就可以讓 user 優先從我們的 CDN 存取資源了
+
+
+<br /><br />
+
+
+
+### `SOA Record` - 負責人是誰
+
+| TYPE | MNAME | RNAME | SERIAL | RETRY | TTL |
+| ---- | ---- | ---- | ----- | --- | --- |
+| SOA | ns1.example.com | admin.example.com | 510025 | 60 | 7200 |
+
+SOA 為 start of authority 的縮寫，儲存相關 DNS zone 的負責人的資訊
+
+<br />
+
+:::info DNS zone 是什麼？
+
+一個 domain name 的部分區塊，由統一個管理者掌管，舉例來說：
+我們現在有 example.com 的 domain name，為了區分不同的功能，我們在 example.com 又有三個子網域，分別是
+`shop.example.com`, `blog.example.com`, `support.example.com`，如下圖：
+
+<br /><br />
+
+<figure>
+  <img src="/img/dns-zones.png" alt="DNS zones" width="600" />
+</figure>
+
+<br />
+
+但 `shop.example.com` 和 `blog.example.com` 的 Server 數量較少，我們就交給同一個管理，
+`support.example.com` 的伺服器比較多，我們就交給另一個人處理
+
+<br />
+
+這時，`shop.example.com` 和 `blog.example.com` 劃分為一個 DNS zone，`support.example.com` 就獨立為另一個 DNS zone，每個 DNS zone 都有特定的人負責管理
+
+:::
+
+<br /><br />
+
+SOA record 由下面幾個部分組成：
+
+<figure>
+  <img src="/img/soa-record.png" alt="DNS zones" width="600" />
+</figure>
+
+<br /><br />
+
+<table>
+  <thead>
+    <tr>
+      <th>欄位名稱</th>
+      <th>說明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>MNAME</b></td>
+      <td>是 Master Name Server 的縮寫，這是該區域的主權威名稱伺服器，負責該區域資料的維護</td>
+    </tr>
+    <tr>
+      <td><b>RNAME</b></td>
+      <td>
+        代表 Responsible person 的縮寫，是負責管理這個 DNS 區域的管理員的電子郵件地址，
+        通常第一個 <code>.</code> 代表 <code>@</code>，例如範例中 <code>admin.example.com</code> 等同於 <code>admin@example.com</code>
+      </td>
+    </tr>
+    <tr>
+      <td><b>SERIAL</b></td>
+      <td>代表此 DNS zone 的版本</td>
+    </tr>
+    <tr>
+      <td><b>RETRY</b></td>
+      <td>伺服器再次向無回應的主要名稱伺服器請求更新前應等待的時間長度</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+<br /><br />
+
+
+### `NS Record` - 是哪台機器管理你家的 DNS 資訊
+
+<br /><br />
+
+
+### `SRV Record` - 更細節的 record
+
+
+<br /><br />
+
+## Mail related
+### `MX Record` - 收信處
+### `PTR Record` - IP 指向名稱
+### `TXT Record` - 純文字
+  - email domain white list，讓設定的 domain 不會被擋
+  - DNS 資訊都是公開的，可利用 Google public DNS 查詢
+
+
+<br /><br />
+
+### 參考資訊
+
+- [PowerCert Animated Videos - DNS Records Explained](https://www.youtube.com/watch?v=HnUDtycXSNE&t=663s)
+- [Cloudflare - 什麼是DNS SOA 記錄？](https://www.cloudflare.com/zh-tw/learning/dns/dns-records/dns-soa-record/)
+- [Wikipedia - SOA record](https://en.wikipedia.org/wiki/SOA_record)
+
+
+<br /><br />

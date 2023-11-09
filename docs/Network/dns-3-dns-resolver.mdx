@@ -1,0 +1,159 @@
+---
+sidebar_label: '[DNS] 3. DNS resolver - 幫你找伺服器的 IP address'
+title: '[DNS] 3. DNS resolver - 幫你找伺服器的 IP address'
+tags:
+  - DNS
+
+---
+
+今天一樣繼續介紹 DNS，我將介紹：
+- DNS resolver 的運作流程
+- 如何優化 DNS 請求
+- 前端部署 & DNS
+
+<br />
+
+## DNS resolver (Resolving Name Server)
+當 local 端的 Browser 和 OS 都沒有對應的 DNS cache 時，我們就會請求本地的 DNS resolver (或 Resolving Name Server) 來幫我們找到 Domain name 對應的 IP address
+
+大致的流程圖如下：
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231002/20148944FhJndag8C2.png"
+    alt=""
+    width="500"
+  />
+</figure>
+
+基本上就是： 
+```js
+Root Nameservers --> TLD Nameservers --> Authoritative Nameservers
+```
+
+<br /><br />
+
+完整的流程圖如下：
+<br />
+
+<img
+  src="https://ithelp.ithome.com.tw/upload/images/20231002/20148944vMeBBpbYd3.png"
+  alt=""
+  width="800"
+/>
+<figcaption>(圖片來源：https://www.youtube.com/watch?v=27r4Bzuj5NQ)</figcaption>
+
+<br /><br />
+
+```mermaid
+asdfl --> asdfoi
+```
+
+大致上的流程為
+1. 找尋本地的 cache
+2. 向 DNS resolver 發出請求，幫我們做 DNS query
+3. DNS resolver 詢問 Root Name Server，找到對應的 TLD Server
+4. DNS resolver 詢問 TLD Server，找到對應的 Authoritative Name Server
+5. DNS resolver 詢問 Authoritative Server，找到對應的 IP address
+
+<br /><br />
+
+而 DNS resolver 通常由以下兩者所提供：
+- ISP (Internet Service Provider)
+- DNS Provider (e.g. Google DNS `<8.8.8.8>`, Cloudfare `<1.1.1.1>`)
+
+<figure>
+  <img src="https://ithelp.ithome.com.tw/upload/images/20231002/20148944mXgfTc1aLt.png" alt="DNS resolver" />
+</figure>
+
+<br /><br />
+
+
+下面我們會以查找 www.bensonchen.com 為例
+
+<br />
+
+### Root Name Server
+
+在查找 `www.bensonchen.com` 時，實際上，我們輸入的資訊是 `www.bensonchen.com.` 或是 `www.bensonchen.com.root`
+
+最後面的 `.` 或 `.root` 的部分，就會幫我們去跟 root name server 做請求，請此 server 幫我們找到下一階段，也就是 `.com` 的 TLD servers，`.com` 的 TLD servers 清單如下：
+
+<figure>
+  <img 
+    src="https://ithelp.ithome.com.tw/upload/images/20231002/20148944KoN7Kxxbkc.png"
+    alt="TLD Nameservers"
+    width="300"
+  />
+</figure>
+
+
+<br />
+<br />
+
+### TLD (Top Level Domain) Server
+
+TLD（Top-Level Domain，頂級域名）是指域名系統（DNS）中的最高級別域名。它們是域名的最後一部分，例如 `.com`、`.org`、`.net` 等。根據其性質和目的，TLD 可以分為以下幾類：
+
+1. **gTLD (Generic Top-Level Domains, 通用頂級域名)**:
+   gTLD 是開放給所有人註冊的，並且通常沒有特定的使用限制。例如，`.com`、`.org` 和 `.net` 是最常見的 gTLD。近年來，隨著新的 gTLD（如 `.app`、`.blog`、`.guru` 等）的推出，gTLD 的範疇也得到了擴展
+
+2. **ccTLD (Country Code Top-Level Domains, 國家代碼頂級域名)**:
+   ccTLD 是代表特定國家或地區的頂級域名，例如 `.uk` 代表英國，`.cn` 代表中國，`.jp` 代表日本。ccTLD 通常由相應國家或地區的域名註冊機構管理，並可能有特定的註冊和使用要求
+
+3. **sTLD (Sponsored Top-Level Domains, 贊助頂級域名)**:
+   sTLD 是由特定社群或組織贊助和管理的頂級域名。例如，`.gov` 是由美國政府贊助的，專供政府機構使用；`.edu` 是專供教育機構使用的
+
+
+<br /><br />
+
+主要區別在於 gTLD 是通用的，通常沒有特定的地理或組織限制，而 ccTLD 和 sTLD 則通常與特定的國家、地區或組織相關，可能有更多的註冊和使用限制。近年來，隨著新的 gTLD 的推出，頂級域名的範疇和多樣性得到了擴展，讓用戶有更多選擇來選擇最符合他們需求的域名
+
+<br />
+
+而 `.com` 的部分，就會幫我們去跟 TLD servers 做請求，請這些 servers 幫我們找到下一階段的 Authoritative Name Server，也就是 `.bensonchen.com` 的 name server
+
+
+<br /><br /><br />
+
+
+### Authoritative Name Server
+
+這部分會幫我們找到最後的 IP address，且我們在設定 A record 或 CNAME 時(後續在 CDN 的部分會再詳細說明)，就是在設定 Authoritative Name Server，幫助我們將 bensonchen.com 指到對應的 IP address，並回傳給我們的本地電腦
+
+
+<br /><br /><br />
+
+針對於 DNS 整體的 resolve 過程如圖所示：
+
+<br />
+
+<figure>
+  <img src="https://ithelp.ithome.com.tw/upload/images/20231002/201489440yxTrhsofi.png" alt="" />
+</figure>
+
+<br /><br /><br />
+
+以上就是 DNS 運作的原理，希望對大家有更進一步的了解～
+
+
+<br /><br />
+
+
+## 結論
+1. `.` 或 `.root` 的部分會幫我們去跟 Root Name Server 做請求，找到對應的 TLD Server
+2. TLD 分為 3 種，通用的 gTLD (`.com`, `.org`)、區域性的 ccTLD(`.uk`, `.,jp`)、特定社群/組織的 sTLD(`.gov`, `.edu`)，TLD Server 可以幫我們找到對應的 Authoritative Name Server
+3. Authoritative Name Server 可以幫我們找到最後目標的 IP address，同時也是我們在設定 A Record 和 CNAME 的部分
+
+
+<br />
+<br />
+
+### 參考資訊
+- [稀土掘金 - 面试装X：深入理解 DNS 解析](https://juejin.cn/post/7105387310698463263#heading-12)
+- [稀土掘金 - DNS 解析优化](https://juejin.cn/post/7221792648541536317#heading-1)
+- [ByteByteGo - Everything You Need to Know About DNS: Crash Course System Design #4](https://www.youtube.com/watch?v=27r4Bzuj5NQ)
+- [PowerCert Animated Videos - How a DNS Server (Domain Name System) works.](https://www.youtube.com/watch?v=mpQZVYPuDGU)
+
+
+<br /><br />

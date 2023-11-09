@@ -1,0 +1,136 @@
+---
+sidebar_label: '[DNS] 4. DNS 在前端的應用'
+title: '[DNS] 4. DNS 在前端的應用'
+tags:
+  - DNS
+
+---
+
+## 前言
+
+前三篇已經介紹完 DNS 的原理，今天會來介紹一下 DNS 到底對前端在工作上有什麼幫助，主要分為 2 個：
+- 優化 request speed
+- 設定 domain 到我們的前端網站資源
+
+<br /><br />
+
+
+## 可以在前端優化網路請求速度，提前解析網域
+
+在前端中，我們可以透過在 HTML 加入特殊的 tag，來幫我們提前解析網域，讓之後同 domain 的 request 可以直接取得本地的 DNS cache，不用再去請求 DNS resolver 把 domain 轉成 IP address
+
+<br />
+
+### 利用 `dns-prefetch` (推薦)
+
+當我們有特定的 3rd party domain，像是 Google fonts, Google Ads 等，我們就可以提前解析，加快加載速度
+
+```html
+<!-- Prefetch DNS for external domains -->
+<link rel="dns-prefetch" href="//fonts.googleapis.com">
+<link rel="dns-prefetch" href="//fonts.gstatic.com">
+
+<!-- Load Google Fonts -->
+<link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+
+```
+
+<br />
+
+
+### 利用 `x-dns-prefetch-control` (不推薦)
+
+這個 meta tag 會幫你偵測你的 html, css, js 中的連結，並且去 pre-fetch 這些連結的 domain
+
+```html
+<meta http-equiv="x-dns-prefetch-control" content="on" />
+```
+
+<br />
+但是 `x-dns-prefetch-control` 的這個支援度目前還不是很好，在 MDN 的文件中，也不建議使用在正式的環境上
+
+![https://ithelp.ithome.com.tw/upload/images/20231003/20148944FE86UTclQq.png](https://ithelp.ithome.com.tw/upload/images/20231003/20148944FE86UTclQq.png)
+
+
+<br />
+
+### 優化成果數據
+
+<table>
+  <thead>
+    <tr>
+      <th align="center">取得 IP 的位置</th>
+      <th align="center">花費時間(ms)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">Browser / OS Cache</td>
+      <td align="center">0 ~ 1</td>
+    </tr>
+    <tr>
+      <td align="center">Router Cache</td>
+      <td align="center">15</td>
+    </tr>
+    <tr>
+      <td align="center">ISP Cache</td>
+      <td align="center">80 ~ 120</td>
+    </tr>
+    <tr>
+      <td align="center">No Cache</td>
+      <td align="center">200 ~ 300</td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
+
+**Browser / OS Cache:** <br />
+- 當瀏覽器首次將一個域名解析為IP地址，並緩存至操作系統時，那麼下一次DNS解析時間可以降至0-1ms
+
+**Router Cache:** <br />
+- 如果結果沒有緩存在系統中，那麼就需要讀取路由器的緩存，進而後續的解析時間最少也要約15ms
+
+**ISP Cache & No Cache:** <br />
+- 如果路由器緩存也不存在，則需要讀取 ISP（網絡服務提供商）DNS緩存，一般像淘寶網、百度這些常見的域名，讀取ISP DNS緩存所需的時間在 80 ~ 120ms，若是不常見的域名，平均需要 200 ~ 300ms
+
+<br />
+
+通常來說，大部分的網站到運營商這塊都能找到 IP
+
+也就是說，`dns-prefetch` 可以為DNS解析過程帶來15-300ms的提升，尤其是對於那些引用了許多其他域名資源的網站，提升效果更為明顯
+
+
+<br />
+<br />
+
+
+## 設定 domain 到我們的前端網站資源
+
+當我們最後將我們的 app 部署到正式環境時，若我們要將自己買的 domain 到我們伺服器的 IP address 或預設 domain，這時候，就需要 DNS 一些相關知識，例如在 AWS 的設定上如下：
+
+![https://ithelp.ithome.com.tw/upload/images/20231003/201489443GSvOzKtHb.png](https://ithelp.ithome.com.tw/upload/images/20231003/201489443GSvOzKtHb.png)
+
+這實際上，就是在設定前面說到的 Authoritative name server，讓我們設定 domain name 會導向到哪個 IP address 或另一個 domain name (也就是產生一個 DNS record，下一篇會提到)，這樣就可以讓我們前端資源被看見了！！！
+
+
+<br /><br />
+
+
+## 結論
+- 我們可以利用 `<link ref="dns-prefetch" />` 去預先解析指定網域，加速我們的 network request 大概約 15 ~ 300ms
+- 瞭解 DNS 的 Authoritative name server 後，更能了解我們在設定 domain 指向到預設網域或 IP address ，也就是設定 DNS record 在整個 DNS 扮演的角色
+
+<br /><br />
+
+
+### 參考資源
+- [稀土掘金 - DNS 解析优化](https://juejin.cn/post/7221792648541536317#heading-1)
+- [前端面试题宝典 - 第291题：DNS 预解析是什么？怎么实现？](https://fe.ecool.fun/topic-answer/d76e76c3-7400-4c6e-958a-b5f00916d47d)
+- [MDN - Using dns-prefetch](https://developer.mozilla.org/en-US/docs/Web/Performance/dns-prefetch)
+- [MDN - X-DNS-Prefetch-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control)
+- [Wikipedia - Domain Name System](https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records)
+- [Cloudflare - DNS records](https://www.cloudflare.com/learning/dns/dns-records/)
+
+
+<br />
