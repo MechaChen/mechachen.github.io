@@ -1,0 +1,214 @@
+---
+sidebar_label: '[CORS] 1. CORS 是什麼？ 阻擋 CSRF 的利器'
+title: '[CORS] 1. CORS 是什麼？ 阻擋 CSRF 的利器'
+tags:
+  - CORS
+  - Security
+
+---
+
+
+## 什麼是 CORS？
+
+先來說明一下什麼是 `Origin`：
+
+`Origin`: 由 `protocol` + `host` + `port`，ex:
+	- https://www.benson-chen.com
+	- http://www.mecha-chen.com:80
+	- https://www.hello-world.com:443
+
+如果 fetch, XMLHTTPRequest 的 api origin 不一樣，就會被 `Cross Origin Resource Sharing (CORS)` policy 阻擋
+
+<br />
+
+:::caution `script`, `img` 的 src 不在此限制
+因為像 `script`, `img` 的 src 只是取得資源，對 Server 沒有什麼安全上的疑慮，所以沒有在 CORS policy 的限制範圍裡
+:::
+
+<br /><br />
+
+## 為什麼要有 CORS？
+
+避免 **CSRF (Cross-Site Request Forgery)**，舉例來說：
+
+<figure>
+  <img src="/img/csrf.png" width="500" />
+</figure>
+
+1. User 登入了 bank.com
+2. bank.com 將銀行的帳號 cookie 存在 User 的瀏覽器，瀏覽器所有的 tab 都存取得到
+3. User 進入 evil.com (偽造的惡意網站)
+4. evil.com 嘗試去存取了 bank.com 的資訊，因為有 cookie 的存在，所以打 api 會成功
+5. Hacker 就成功利用 evil.com 取得 User 的銀行帳戶資訊了
+
+<br />
+
+有了 CORS，因為 `evail.com` 跟 `bank.com` 是不一樣的 domain，就可以避免 `evil.com` 取得 `bank.com` 的 api response，並解決掉 CORS 了 🌈🌈🌈
+
+
+<br /><br />
+
+## 陷阱: Server 其實還是會處理 request
+
+雖說有了 CORS 之後，可以阻擋 CSRF，可是阻擋的方式只是
+
+<br />
+
+> **Browser 不把 "已經取得 respones 的結果" 回傳給你看**
+
+<br />
+
+驚不驚喜，意不意外 😈😈😈
+
+<img src="https://memeprod.ap-south-1.linodeobjects.com/user-gif-thumbnail/92a94a6729ddc1ad62ef6041fa5e0461.gif" width="400" />
+
+<br /><br /><br />
+
+怎麼說呢？ 你會看見的錯誤訊息如下：
+
+:::danger CORS error
+request has been blocked by CORS policy: No ‘Access-Control-Allow-Origin’ header is present on the requested resource
+:::
+
+<br />
+
+有沒有發現亮點？ `Access-Control-Allow-Origin` 是 Server 的 response 才會加上的 header，表示 Server 其實已經處理完 request 了
+
+那如果我們的 request 其實會去更改 DB 的資料，像是 `PUT /user/:id` 或是 `DELETE /user/:id` 呢？
+
+那這時候就悲劇了，就算有 CORS 的保護，Server 的 DB 資料還是會被砍掉，所以呢？ 又有另外一個機制幫我們去區分 request，來針對不同安全程度的 request 做不同的處理，分別是 **簡單請求** & **一般請求**，我們接下來就會針對這 2 種請求來做說明
+
+<br /><br />
+
+## 簡單請求
+
+在只符合特定簡單內容的條件下，因為安全性疑慮比較低，會直接對 Server 發送請求
+
+<br />
+
+### 請求內容
+
+- Method: `GET`, `POST`, `HEAD`
+- Request header: 
+	- `Accept`
+	- `Accept Language`
+	- `Content-Language`
+	- `Content-Type`: `application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain`
+
+
+
+## 一般請求
+
+如果不符合上述簡單請求的條件，會對 Server 先發送 Preflight request ，再發送一般 request
+
+
+### Preflight Request (預檢請求)
+
+會先對 Server 發送預檢請求，表示有哪一些 HTTP method 的 options，故發送的 request 為 HTTP `OPTION` method，範例如下
+
+```plaintext
+OPTIONS /data/
+Host: othersite.com
+Origin: https://shubo.io
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: X-MY-CUSTOM-HEADER, Content-Type
+```
+
+<br /><br />
+
+	
+:::info 為什麼是叫 OPTIONS 呢？ 而不是 CHECK 之類的？
+HTTP 方法的命名通常與其功能和目的有關。對於 "OPTIONS" 這個名稱，其背後的原因可以從兩個方面來理解：
+1. **提供選項（Options）**：OPTIONS 方法的主要目的是提供關於目標資源可用的通信選項。換句話說，它告訴客戶端可以對特定資源進行哪些操作，這些操作就是客戶端的“選項”。所以，從這個角度來看，“OPTIONS”這個名稱反映了這個方法的核心功能，即提供有關資源的可用方法和限制的信息
+:::
+
+
+<br /><br />
+
+
+### example:  js POST fetch
+
+```javascript
+fetch('https://othersite.com/data/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json', // 非簡單請求
+    'X-CUSTOM-HEADER': '123'
+  }
+})
+```
+
+
+#### Preflight request
+
+傳送
+- `OPTIONS` method: 跟 Server 說我想要確認哪些 method 在此 domain 下可以用
+- `Host`: Client 的 host
+- `Origin`: Client 的 domain
+- `Access-Control-Request-Method`: Client 要允許的 method
+- `Access-Control-Request-Headers`: Client 要允許的 headers
+
+```plaintext
+```plaintext
+OPTIONS /data/
+Host: othersite.com
+Origin: https://shubo.io
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: X-MY-CUSTOM-HEADER, Content-Type
+```
+
+<br />
+
+#### Preflight response
+
+- `Access-Control-Allow-Methods`: Server 允許的 HTTP 方法。
+- `Access-Control-Allow-Headers`: Server 允許的非「簡單」header。
+
+```plaintext
+Access-Control-Allow-Methods: POST
+Access-Control-Allow-Headers: X-MY-CUSTOM-HEADER, Content-Type
+```
+
+<br />
+
+#### 一般 Request & Response
+
+request:
+
+```plaintext
+POST /data/
+Host: othersite.com
+Origin: https://shubo.io
+Content-Type: application/json
+X-MY-CUSTOM-HEADER: 123
+```
+
+<br />
+
+response:
+
+```plaintext
+Access-Control-Allow-Origin: https://shubo.io
+```
+
+<br /><br />
+
+
+## 結論
+
+1. 有了 CORS，就可以阻擋 CSRF，避免 hacker 使用 client cookie 取得 client 相關資訊或更改 client 相關資訊
+2. 即便有了 CORS，還是會跟 Server 請求成功，只是簡單請求的話，response 會被 browser 阻擋，一般 request 的話，如果 preflight response fail 了，才會阻擋接下來的請求
+
+<br /><br /><br />
+
+
+### 參考資源
+- [[教學] 深入了解 CORS (跨來源資源共用): 如何正確設定 CORS？ - Shubo 的程式開發筆記](https://www.shubo.io/what-is-cors/)
+- [CORS 是什麼? 為什麼要有 CORS? ｜ExplainThis](https://www.explainthis.io/zh-hant/swe/what-is-cors)
+- [面试官问我CORS跨域，我直接一套操作斩杀！ - 掘金 (juejin.cn)](https://juejin.cn/post/6983852288091619342)
+- [零基礎資安系列（一）-認識 CSRF（Cross Site Request Forgery） (cymetrics.io)](https://tech-blog.cymetrics.io/posts/jo/zerobased-cross-site-request-forgery/)
+- [你是怎样解决跨域问题的?-面试必问-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/2132990)
+- [前端面试查漏补缺–(三) 跨域及常见解决办法 - 射手猫的个人博客 (shotcat.com)](https://www.shotcat.com/%E5%89%8D%E7%AB%AF%E9%9D%A2%E8%AF%95%E6%9F%A5%E6%BC%8F%E8%A1%A5%E7%BC%BA-%E4%B8%89-%E8%B7%A8%E5%9F%9F%E5%8F%8A%E5%B8%B8%E8%A7%81%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95/)
+- [CORS in 100 Seconds - YouTube](https://www.youtube.com/watch?v=4KHiSt0oLJ0&pp=ygUEQ09SUw%3D%3D)
+
+<br /><br />

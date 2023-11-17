@@ -1,0 +1,314 @@
+---
+sidebar_position: 2
+sidebar_label: '[CDN] 1. 什麼是 CDN？ 讓我們的資料在世界各地被快速存取'
+title: '[CDN] 1. 什麼是 CDN？ 讓我們的資料在世界各地被快速存取'
+tags:
+  - CDN
+  - Network
+
+---
+
+## CDN 是什麼？ 為什麼要使用 CDN？
+
+在早期 199X 年代，原本是用來作為傳輸靜態內容到各個世界，後來近期，只要有 http traffic，就有可能使用 CDN，也就是內容傳輸網路
+
+有了 CDN，我們可以大大的減少網路內容傳輸的距離，進而大大的減少傳輸時間，顯著的提升效能
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944b4p5mfHRbT.png"
+    alt="CDN"
+    width="500"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+尤其是在網速很重要的年代，0.1 秒都會帶來極大的產值，大大的增加我們的轉換率
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/201489442FveR93bST.png"
+    alt="CDN"
+    width="300"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+:::info Conversion rate (轉化率) 是什麼？
+
+Conversion Rate（轉化率）是一個衡量網站、應用程序或營銷活動效果的指標，通常用於衡量用戶在達到某個目標（例如購買產品、註冊帳戶或填寫表格）方面的表現。換句話說，它描述了從用戶瀏覽網站到實際完成目標操作的過程中的成功比例。
+
+轉化率的計算公式如下：
+
+`轉化率（%） =（完成目標操作的用戶數量 / 參與用戶總數）x 100`
+
+例如，如果一個電子商務網站有 1,000 名訪客，其中有 50 名訪客購買了產品，那麼轉化率就是：
+
+`轉化率（%） =（50 / 1,000）x 100 = 5%`
+
+
+轉化率是一個重要的營銷和用戶體驗指標，通常用來評估廣告投放、網站設計、產品定價等方面的成功程度。通過分析和優化轉化率，企業可以提高收入、降低獲客成本，並提高客戶滿意度。
+:::
+
+
+<br /><br />
+
+CDN 分布在全球的每一個點稱作 Pop (Point of Presence)，在每個 Pop 的 server，稱做 Edge server
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944QsqHeNaY5l.png"
+    alt="CDN"
+    width="700"
+  />
+</figure>
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/201489440rhnW5lKbZ.png"
+    alt="CDN"
+    width="200"
+  />
+</figure>
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944BM7DgaWnNu.png"
+    alt="CDN"
+    width="100"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+訪問我們網站的客戶們，可以快速的從 Edge server 中，取得他們所需要的內容
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944DitumL7iPU.png"
+    alt="CDN"
+    width="700"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+以下是知名的 CDN 供應商：
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944nxiGEEZOxE.png"
+    alt="CDN"
+    width="400"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+
+<br />
+
+## CDN 找尋最近的 Edge server 的技術
+
+有分以下 2 種：
+- DNS based routing
+- Anycast
+
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944rCuczPYUDV.png"
+    alt="CDN"
+    width="400"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+<br />
+<br />
+
+### DNS based routing
+
+DNS based routing 的每個 Edge server 的 ip address 都不一樣
+
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944biUIXNj0E6.png"
+    alt="DNS based routing"
+    width="500"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+
+### Anycast
+
+Anycast 的每個 Edge server 的 ip address 都一樣
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944NBLyC9JqDF.png"
+    alt="Anycast"
+    width="500"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+
+## CDN 額外的好處
+
+Edge server 作為一個 reverse proxy，可以存取著 `大量的` 內容緩存 (content cache)
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944gk88liOJqg.png"
+    alt="Anycast"
+    width="300"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+<br />
+
+
+### Security - 阻擋 DDOS
+
+若我們沒有 CDN 的狀況，我們的 Server 就必須接收所有的請求
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/201489447deEddTLeL.png"
+    alt="DDOS"
+    width="300"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+因為 CDN 有很多的 server，具有大量的 network capactiy，可以抵檔 DDOS
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944xn3qTXzfGa.png"
+    alt="DDOS"
+    width="400"
+  />
+</figure>
+
+<br /><br />
+
+尤其是利用 Anycast 建立的 CDN，更能有效地擴散攻擊
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/20148944rY1ZcMeEzh.png"
+    alt="DDOS"
+    width="600"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+<br /><br />
+
+
+
+### Availability
+
+就算附近的 CDN 壞了，還有許多個 Edge server 可以支援
+
+<figure>
+  <img
+    src="https://ithelp.ithome.com.tw/upload/images/20231005/2014894479nj0e0bxr.png"
+    alt="DDOS"
+    width="600"
+  />
+  <figcaption>
+    (圖片來源：<a href="https://www.youtube.com/watch?v=RI9np1LWzqw" target="_blank">ByteByteGo</a>)
+  </figcaption>
+</figure>
+
+
+
+<br /><br />
+
+
+## CDN 的運作流程？
+
+![https://ithelp.ithome.com.tw/upload/images/20231005/201489448YunMnHOoS.jpg](https://ithelp.ithome.com.tw/upload/images/20231005/201489448YunMnHOoS.jpg)
+
+
+### 查找 CDN edge server IP address
+1. Bob 在瀏覽器中輸入 www.myshop.com 瀏覽器在本地 DNS cache 中查找域名。
+2. 如果域名不存在於本地 DNS 緩存中，瀏覽器會去 DNS resolver 解析名稱。DNS resolver 通常位於互聯網服務提供商（ISP）中
+3. DNS 解析器遞迴地解析域名。最終，它會要求 Authoritative name server 解析域名。
+4. 如果我們不使用 CDN，Authoritative name server 會返回 www.myshop.com 的 IP 地址。但使用 CDN 的情況下，Authoritative name server 有一個 CNAME 指向 www.myshop.cdn.com CDN 伺服器的域名）
+5. DNS 解析器要求 Authoritative name server 解析 www.myshop.cdn.com
+6. 授權名稱伺服器返回 CDN 的負載平衡器的域名 www.myshop.lb.com
+7. DNS resolver 要求 CDN Load balancer 解析 www.myshop.lb.com  IP 地址、使用者的 ISP、請求的內容和伺服器負載，Load balancer 選擇一個最佳的 CDN edge server
+8. CDN Load balancer 返回 CDN edge server 的 IP 地址，用於 www.myshop.lb.com
+9. 現在我們終於得到了要訪問的實際 IP 地址。DNS 解析器將 IP 地址返回給瀏覽器
+
+<br />
+
+### CDN edge server 查找內容 & 回傳
+10. 瀏覽器訪問 CDN 邊緣伺服器以加載內容。CDN 伺服器上緩存了兩類內容：靜態內容和動態內容。前者包含靜態頁面、圖片、視頻；後者包括邊緣計算的結果
+11. 如果邊緣 CDN 伺服器的緩存中沒有該內容，它會向上到區域 CDN 伺服器。如果內容仍未找到，它將向上到中央 CDN 伺服器，甚至到源頭 - 倫敦的網路伺服器。這被稱為 CDN 分佈網路，伺服器是按地理位置部署的
+
+
+<br />
+
+## 結論
+- 知道 CDN 可以幫我們 cache server 資源內容，並以最近的距離傳給 user，大大提升效能，提高轉換率
+- 瞭解 CDN 還可以減少 DDOS，並提高 availability，不會輕易讓我們的網站損壞
+- 瞭解 CDN 透過 DNS 和在 Authoritative 上做 DNS record 的設定，以達到 CDN 在最近距離傳送給 user 的目的
+
+
+<br />
+
+### 參考資源
+
+- [ByteByteGo - What Is A CDN? How Does It Work?](https://www.youtube.com/watch?v=RI9np1LWzqw)
+- [ByteByteGo - How CDN work](https://blog.bytebytego.com/p/how-does-cdn-work)
+- [稀土掘金 - 图解|什么是内容分发网络(cdn)](https://juejin.cn/post/7064952956201730062#heading-6)
+
+<br /><br />

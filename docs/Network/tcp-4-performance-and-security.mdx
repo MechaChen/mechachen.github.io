@@ -1,0 +1,143 @@
+---
+sidebar_position: 3
+sidebar_label: '[TCP] 4. TCP connection 沒有你想像的簡單！ 細談大量 TCP 連結的效能問題和資安問題'
+title: '[TCP] 4. TCP connection 沒有你想像的簡單！ 細談大量 TCP 連結的效能問題和資安問題'
+tags:
+  - TCP
+  - Network
+
+---
+
+
+## 前言
+
+在建立 TCP connection 時，實際情況不是發出一個 request，server 就會馬上處理，可能同時還有許多 user 想建立 TCP connection 來做網路請求，因此，就需要 `SYN Queue` 的機制來幫我們處理大量的 request
+
+<br />
+
+但此時，也會因為此設計帶來一些可能的攻擊手段，稱作 `SYN flood attack`
+
+
+<br />
+
+
+## 什麼是 `SYN Queue`，為什麼要存在？
+
+在建立 TCP handshake 時，如果同時有很多 Client ，那單一個 Server 很難一瞬間處理所有的請求，因此，Client 過來的請求都會被放到 Server 的 queue 等待解讀和執行
+
+像是 1st handshake 的 SYN segment 會被放到 `SYN queue`
+還有 3rd handshake 的 ACK segment 會被放到 `Accept queue`
+如下圖：
+
+<br />
+
+<figure>
+  <img src="https://ithelp.ithome.com.tw/upload/images/20231009/201489444YOLk6alTQ.png" width="600" alt="SYN Queue" />
+</figure>
+
+
+<br />
+
+### Pros & Cons
+
+|  | 描述 |
+| --- | :--- |
+| Pros | ✅ Server 不用同一時間處理大量的 connection request，減少負擔 |
+| Cons | ❌ 同一時間 Client 能建立的連結有限 |
+
+
+
+<br /><br />
+
+
+## 什麼是 SYN flood attack？
+
+目的：讓正常的 request 無法被處理
+
+方法： <br />
+➡ 利用 SYN queue 有數量限制的條件，使 queue 一直是滿的，讓 queue 裡面的東西無法被消化 <br />
+➡ 那怎麼讓 queue 無法被消化呢？ <br />
+➡ 根據上圖，就是當 3rd handshake 一直沒有回傳 ACK 時，SYN segment 就會持續待在 SYN queue 裡無法被解出 <br />
+➡ 當 Client 沒有回傳 ACK 時，Server 會一直重傳 SYN segment，重複 5 次，共 63s <br />
+➡ 當這 5 次都沒有反應時，才將此 SYN segment 丟棄 <br />
+➡ 所以，就是讓 Client 在 3rd handshake 不要回傳 ACK，其中最常見的一種方式就是 **短時間內，大量產生假的 IP address**，這樣就實際上不會有真實的 Client 回傳 ACK segment 了 <br />
+
+<br /><br />
+
+
+:::success 比喻
+上述方法就好像餐廳與訂位客人的關係，當有一假客人訂了位，且當餐廳呼叫訂位的客人，卻找不到人，餐廳就會在 10m 內一直呼叫客人，保留客人的位置 10m，之後才取消他們的位置
+
+如果有一堆這種假客人，這時候，餐廳就必須一直去應付這些假客人，餐廳這是就沒有正常的客人進來，**餐廳就無法正常的營運，無法處理真正有訂位想吃飯的客人**
+:::
+
+
+<br /><br />
+
+
+## 如何預防 SYN flood attack?
+
+有以下幾種方式：
+1. 利用 `SYN cookies` 技術
+2. 縮短超時 ( SYN timeout ) 時間
+3. 增加 SYN Queue 的容量限制
+
+
+<br />
+
+
+### 1. 利用 `SYN cookies` 技術
+
+在 2nd handshake 送出 SYN + ACK segment 時，將連結建立成功的資訊放在 Client，Server 就不存在 SYN Queue 裡了
+
+就好像餐廳直接給你一個號碼牌，你只要有號碼牌，就可以進入餐廳了
+
+<br />
+
+:::caution
+但這個方法實際上不建議，因為這樣當所有 Client 都是真的，且有很大量的 Client 時，
+我們無法限制同一時間的可發送要求的客戶量，所以，我們應該在 SYN queue 有遇到 SYN flood attack 時，
+再開啟 SYN cookie 機制
+:::
+
+
+<br />
+
+<br />
+
+
+### 2. 縮短超時 ( SYN timeout ) 時間
+
+就好像我們把保留位置的時間縮短到 3m ，這樣即使有假客人，我們也不會卡住整體的服務太久
+
+<br />
+
+
+### 3. 增加 SYN Queue 的容量限制
+
+就好像我們把餐廳能容量的客人數往上升，也可以解決這個問題
+
+
+<br /><br />
+
+
+
+## 結論
+- 瞭解 TCP connection 背後有 SYN queue 來處理大量的建立 TCP 的請求
+- 瞭解 hacker 可利用 SYN flood attack，短時間建立大量的假 IP address，使 SYN queue 一直是滿的，且無法正常運作
+- 瞭解可利用 SYN cookie、縮減 SYN timeout、增加 SYN Queue 容量來解決 SYN flood attack 的問題
+
+
+
+<br />
+
+
+### 參考資源
+
+- [面试官，不要再问我三次握手和四次挥手 | 猿人谷 (yuanrengu.com)](https://yuanrengu.com/2020/77eef79f.html)
+- [Denial of Service Attacks (Part 3): TCP SYN Flooding - YouTube](https://www.youtube.com/watch?v=sUrM7_G_y7A)
+- [TCP SYN Queue and Accept Queue Overflow Explained - Alibaba Cloud Community](https://www.alibabacloud.com/blog/tcp-syn-queue-and-accept-queue-overflow-explained_599203)
+
+
+
+<br /><br /><br />

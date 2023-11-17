@@ -6,6 +6,10 @@ const darkCodeTheme = require('prism-react-renderer/themes/palenight');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
   title: 'Benson',
   tagline: 'Dinosaurs are cool',
   url: 'https://mechachen.github.io',
@@ -73,10 +77,15 @@ const config = {
           },
           {to: '/blog', label: 'Blog', position: 'left'},
           {
-            href: 'https://github.com/facebook/docusaurus',
+            href: 'https://github.com/MechaChen/mechachen.github.io',
             label: 'GitHub',
             position: 'right',
           },
+          {
+            href: 'https://www.linkedin.com/in/benson-chen-ba136b179/',
+            label: 'LinkedIn',
+            position: 'right',
+          }
         ],
       },
       footer: {
