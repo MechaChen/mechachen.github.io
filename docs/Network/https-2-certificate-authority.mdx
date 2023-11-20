@@ -1,0 +1,153 @@
+---
+sidebar_label: '[HTTPS] 2. 我是誰？ 用 CA 憑證來表明自己'
+title: '[HTTPS] 2. 我是誰？ 用 CA 憑證來表明自己'
+tags:
+  - HTTPS
+  - Security
+
+---
+
+
+<br />
+
+
+## 前言
+經過上一篇的解說，我們知道，就算利用的非對稱加密這種聰明的方法，仍舊還是不夠，所以，我們需要一種更安全的方式，來保證我們的傳輸是安全的，也就是現在 HTTPS 採用的 **CA 憑證**，來幫我們化解中間人攻擊
+
+<br />
+
+接下來會循序漸進地告訴大家為什麼 **CA 憑證** 可以幫我們阻擋中間人攻擊
+
+<br />
+
+## 問題 1：如何避免中間人換掉公鑰？
+在上一篇的文章中，我們提到中間人可以攔截 Person 2 的資訊，駭客可以透過替換 Person 2 的 Public key，傳給 Person 1，讓 Person 1 用錯誤的 Public key 加密，使得駭客得以解密獲取 Person 1 傳遞的資料
+
+<br />
+
+## 解法 1：加入自己身份相關的 Hash，證明我是誰
+這時，Person 2 可以透過將
+- 自己的公鑰
+- 自己的 Personal info
+
+進行 hash 來產生資訊摘要 (information digest)，接著，我們再來傳輸看看，看當駭客更換 Public key 時會發生什麼事？
+
+![Attack hashed info](/img/attack-hashed-info.png)
+
+
+這時，我們將自己的
+- Public key
+- Person 2 info
+- Info digest (hashed value)
+
+<br />
+
+傳遞到網路上，當駭客當中間人擷取時，僅將 Public key 更換，其他資訊正常傳送，避免起疑。駭客更換完後，傳送的資訊為：
+
+- Hacker's Public key
+- Person 2 info
+- Info digest
+
+<br />
+
+這時呢，如果 Person 1 要驗證這些資訊有沒被人竄改過，我們就可以將 H-Public key 和 Person 2 info hash，產生一個新的 info digest，再和傳過來的相比，就知道有沒有被篡改過了
+
+<br />
+
+## 中場小結
+所以，多傳遞跟自己相關的 Hash 值，可以知道我們其他接收到的資訊有沒有被篡改
+
+<br />
+
+## 問題 2：多傳消息摘要就能完美地化解中間人攻擊了嗎？
+雖然我們透過多傳 info digest，使得駭客如果更改 Public key，就會無法通過檢驗，但是，如果駭客連 info digest 都替換掉，我們就沒有相關的資訊可以驗證了
+
+假設，駭客保留原本的 Person 2 info，使用了自己的
+
+- H-Public key
+- 利用 Person 2 info + H-Public key 形成的 Fake info digest
+
+<br />
+並將這三組資料傳送給 Person 1，<br />
+➡️ Person 1 將 H-Public key 和 Person 2 info 雜湊過後<br />
+➡️ 得到的值就會等同於 Fake info digest<br />
+➡️ 我們也因此無法驗證資料有沒有被中間人替換過
+
+![tempering info data](/img/tempering-info-data.png)
+
+<br />
+
+### 說到底，那到底要如何避免中間人攻擊？
+那這樣的話，透過自己傳輸的方式，總是會被中間人竄改，那我們不如就找個有公信力的機構，透過他們的機制保護我們的第一次傳輸，我們稱這有公信力的機構為 Certificate authority (憑證管理中心)
+
+CA 也同樣是透過非對稱式加密保護第一次傳輸，CA 會提供自己的 Public & Private key 給接收方和傳送方
+
+- CA - Private key 給 Person 2
+- CA - Public key 給 Person 1
+我們對原本 Person 2 的 info digest 用 CA - Private key 再加密，形成 Digital signature (數位簽名)
+
+<br />
+
+然後，再將 Person 2 的這 3 個訊息一起傳輸：
+- Public key
+- Personal info
+- Digital signature
+
+形成所謂的 Digital certificate (數位證書)
+
+<figure>
+  <img
+    width="300"
+    src="/img/digital-certificate.png"
+    alt="Digital Certificate"
+  />
+</figure>
+
+<br />
+
+### 化解第一次 MITM
+
+![Prevent Certificate Tempering](/img/prevent-certificate-tempering.png)
+
+那我們來看看如果中間人用第二次的攻擊手段， 將 Public key 和 info digest 都換掉的情況，Person 1 能不能成功的偵測到呢？
+
+如果駭客用第二次的進攻手段， 甚至偽造了自己的證書時， <br />
+➡️ 當假證書傳到 Person 1 手上時，因為證書無法用 CA - Public key 解出 <br />
+➡️ 代表這個假證書並不是用 CA - Private key 加密的 <br />
+➡️ 其中必有詐！！！ <br />
+
+<br />
+
+故我們因此成功阻擋了駭客
+
+
+<br />
+
+
+### 化解第二次 MITM
+那假如這次駭客學乖了，就不更改 Digital Signature 的部分，讓 Person 1 可以用 CA - Public key 解開， 狀況就會如下圖發展
+
+![Prevent Signature Tempering](/img/prevent-signature-tempering.png)
+
+在 Person 1 用 CA - Public key 解開後，成功了得到了 Person 2 所加密過的 info digest， <br />
+➡️ 但是這時候呢，他又將得到的 Public key 和 Personal info 去 hash，看看這兩個資料有沒有被調包過 <br />
+➡️ 將 Public key 和 Personal info 進行雜湊得到一個新的 info digest 時 <br />
+➡️ 比對我們解密得到的 Person 2 info digest， 發現不一樣，代表 Public key 和 Personal info 確實有被篡改過 <br />
+
+<br />
+
+因此，我們也成功化解了駭客的攻擊
+
+<br />
+
+## 結論
+- 我們可以透過數位簽章 (Digital Signature)，表明自己的身份不是駭客
+- 我們透過 Certificate Authority 來確保我們的驗證機制 (即我們的數位簽章)不會被替換掉，成功避免的中間人攻擊 (Man-in-the-middle)
+
+<br />
+
+### 參考資源
+- [一个故事讲完https (qq.com)](https://mp.weixin.qq.com/s/StqqafHePlBkWAPQZg3NrA)
+- [Larry - 一次搞懂密碼學中的三兄弟 — Encode、Encrypt 跟 Hash](https://medium.com/starbugs/what-are-encoding-encrypt-and-hashing-4b03d40e7b0c)
+
+<br /><br />

@@ -1,0 +1,192 @@
+---
+sidebar_label: '[HTTPS] 1 - 在 HTTP 沒有 CA 憑證的時代，產生的資安問題'
+title: '[HTTPS] 1 - 在 HTTP 沒有 CA 憑證的時代，產生的資安問題'
+tags:
+  - Security
+  - HTTPS
+
+---
+
+
+## 前言
+
+關於 HTTPS 的部分，我想分為三篇來讓大家比較好理解：
+1. 在 HTTP 沒有 CA 憑證的時代，產生的資安問題
+2. 我是誰？ 用 CA 憑證來表明自己
+3. 安全傳輸的建立過程 - TLS handshake
+
+<br />
+
+一開始的前 2 篇，會著重於「為什麼我們要用 HTTPS？」，使用 HTTPS 之後，如何幫我們抵擋駭客的入侵，並且會以有沒有 CA (Certificate Authority) 憑證為分水嶺，來跟大家解說為什麼要有 CA 憑證
+
+<br />
+
+第 3 篇，會告訴大家在每次 request 中，建立 HTTPS 中 "S" 的完整的流程，也就是 TLS/SSL handshake，讓我們每次的通訊都有 HTTPS 的保護
+
+<br />
+
+
+## HTTP 的安全問題 1：Sniffing attack (嗅探攻擊)
+在一開始最土砲的 HTTP 上，我們的資料都是以 Plain Text 傳輸的，沒有任何的保護，就好像在裸奔一樣，任何人都可以輕易的監聽並取得資料
+
+<figure>
+  <img
+    src="/img/sniffing-attack.png"
+    alt="Sniffing Attack" width="500" />
+</figure>
+
+<br />
+
+那我們傳輸的資料就會輕易的被竊聽
+
+<br />
+
+
+## 解方一：Symmetric encryption (對稱加密)
+
+### 原理
+這時呢，我們為了不被監聽者輕易讀取我們的資料，我們可以做加密 (Encryption) 的動作，我們先用最簡單的對稱加密 (也就是說，雙方的密鑰都是同一把)，並加密我們的訊息，流程如下：
+
+1. Person 1 將鑰匙傳給 Person 2
+2. Person 1 將傳輸資料用此鑰匙加密，Person 2 用此鑰匙解密，解讀訊息
+
+![Symmetric encryption](https://mechachen.github.io/img/symmetric-encryption.png)
+
+<br />
+
+
+這時候，我們傳輸的資料就會是加密過的資訊，駭客就無法輕易解讀了
+
+![Symmetric encryption and hacker](https://mechachen.github.io/img/unhackable-symmetric-encryption.png)
+
+<br />
+
+:::info 為什麼不用 ENCODE (編碼) 呢？
+因為編碼的目的只是將我們的資料轉換成其他語言， 如果駭客知道我們是使用什麼語言，他可以轉換回來， 我們的資料一樣會被看光
+:::
+
+
+:::info **為什麼不用 HASH (雜湊) 呢？**
+因為雜湊的目的是讓送出方的資料無法被解讀， 這樣的話取得方也沒辦法讀取資料
+:::
+
+<br /><br />
+
+
+## HTTP 的安全問題 2：Key stolen
+但這種方法還是有個小漏洞，那就是
+
+```
+當第一次傳輸的鑰匙被偷時，駭客就可以解密了
+```
+
+<br />
+
+駭客的攻擊流程如下圖：
+
+1. 竊聽到你的對稱加密鑰匙
+2. 駭客在後續的傳輸中，利用取得的鑰匙解密資訊
+
+![Symmetric Encryption Key Stolen](https://mechachen.github.io/img/sym-key-stolen.png)
+
+<br />
+![Hacker crack Symmetric Encryption](https://mechachen.github.io/img/crack-sym-encrypt.png)
+
+
+因此，對於 Sniffing attack，我們僅用對稱加密還是無法完美解決
+
+<br /><br />
+
+
+## 解方二：Asymmetric encryption (非對稱加密)
+因此，為了解決這個問題，我們就有非對稱加密來解決這個問題
+
+
+### 原理
+非對稱加密的流程如下：
+
+1. 我們在接收訊息方 (Person 2) 產生一組鑰匙，一個是公開的 (Public key)，一個是私有的 (Private key)，公鑰大家都可以取得，但私鑰只會保留在自己身上，且經過公鑰加密的資訊，可以藉由私鑰解密，反之亦然
+2. 我們將公鑰傳給對方 (Person 1)，讓對方用來加密
+3. 對方利用公鑰加密，以確保資訊不會被駭客以明文讀取
+
+<br />
+
+這樣一來，就只有 Person 2 能看到解密後的資料，詳細過程如下圖：
+![Encrpytion](https://mechachen.github.io/img/async-encryption.png)
+
+
+<br />
+
+
+### 完美抵擋 Sniffing attack
+這時候，如果有駭客嘗試做 Sniffing attack，會發生什麼事呢？
+
+如果駭客在 Step 2，將我們的 Public key 給偷走
+
+![Attack Asymmetric Encryption](https://mechachen.github.io/img/attack-async-encrypt-1.png)
+
+
+
+當我們在 Step 3 時，我們經公鑰傳輸的資料，駭客也沒辦法用它取得的公鑰解開，這樣就解決對稱加密時遇到的問題了 🎉
+
+但是先別高興得太早，事情哪有這麼簡單呢？ 俗話說「你有張良計我有過牆梯」，那駭客自然就會有更厲害的招來突破這個安全網啦～
+
+
+<br />
+
+## HTTP 的安全問題 3：Man-in-the-middle attack (中間人攻擊)
+
+### 問題：非對稱加密還是會被破解
+雖然非對稱式加密可以阻止駭客直接從旁邊知道你的資料 (Sniffing attack)，但是當駭客直接介入我們的傳輸過程時，將傳輸的對象導向成駭客自己時， <br />
+➡️ 這時候，駭客就可以拿到 Person 2 的 Public key <br />
+➡️ 然後駭客將自己的 Public key (這裡稱 H-Public key) 傳給 Person 1 <br />
+
+![Man in the middle Stealing key](https://mechachen.github.io/img/middle-man-stealing-key.png)
+
+<br />
+
+➡️ 這樣，Person 1 傳的訊息就會被駭客用 H-Private key 解開 <br />
+➡️ 最後，駭客再用已取得的 Public key 加密回去，回傳給 Person 2， <br />
+➡️ Person 2 就會以為傳輸的過程沒問題 <br />
+
+![Man in the middle attack](https://mechachen.github.io/img/middle-man-attack.png)
+
+<br />
+
+上述過程就是所謂的 **中間人攻擊 (Middle man attack)**
+
+<br />
+
+:::info **我們都已經知道 CLIENT 的 IP, MAC ADDRESS 了，為什麼還會被中間人攻擊呢？**
+其實駭客可以透過一些方法，將 Server 導向錯誤的 IP address， 以下是幾種常見的方法：
+
+- **ARP 欺騙 (ARP spoofing)**：
+攻擊者利用 ARP 協議的漏洞，偽造 ARP 回應，使受害者誤以為攻擊者的 MAC 地址是通信對象的 MAC 地址。
+即使知道正確的 MAC 地址，攻擊者仍然可以使用這種方法欺騙我們的設備
+
+- **DNS 劫持 (DNS hijacking)**：
+攻擊者綁架 DNS 查詢過程，將受害者引導至惡意網站。即使我們知道目標 IP 地址，攻擊者仍可在 DNS 查詢過程中進行攻擊
+:::
+
+<br />
+
+
+所以，即便我們已經使用的非對稱加密，駭客還是可以用中間人攻擊竊取我們的資訊
+
+<br /><br />
+
+
+## 結論
+- 我們在 HTTP 協議上傳輸時，會被 **嗅探攻擊(Sniffing attack)** 竊取傳輸的資訊，我們可以利用 **非對稱加密 (Asymmetric Encryption)** 來解決
+- 即使有了 **非對稱加密**，我們還是會被 **中間人攻擊(Man-in-the-middle attack)** 竊取我們的資訊
+
+
+<br /><br />
+
+
+### 參考資訊
+- [一个故事讲完https (qq.com)](https://mp.weixin.qq.com/s/StqqafHePlBkWAPQZg3NrA)
+- [Larry - 一次搞懂密碼學中的三兄弟 — Encode、Encrypt 跟 Hash](https://medium.com/starbugs/what-are-encoding-encrypt-and-hashing-4b03d40e7b0c)
+
+
+<br /><br />

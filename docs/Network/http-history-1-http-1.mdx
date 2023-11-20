@@ -1,7 +1,7 @@
 ---
 sidebar_position: 4
-sidebar_label: '[HTTP] 簡單易用的 HTTP/0.9 ~ HTTP/1.1'
-title: '[HTTP] 簡單易用的 HTTP/0.9 ~ HTTP/1.1'
+sidebar_label: '[HTTP] 1. 簡單易用的 HTTP/0.9 ~ HTTP/1.1'
+title: '[HTTP] 1. 簡單易用的 HTTP/0.9 ~ HTTP/1.1'
 tags:
   - HTTP
   - Network
@@ -153,9 +153,9 @@ Server: Apache 0.84
 <br />
 
 ### Cache 部分
-HTTP 1.0 的緩存控制機制主要依靠 Last-Modified 和 Expires 這兩個 header 來控制資源的緩存
-- **Last-Modified**：表示資源的最後修改時間
-- **Expires**：表示資源的過期時間
+HTTP 1.0 的緩存控制機制主要依靠 `Last-Modified` 和 `Expires` 這兩個 header 來控制資源的緩存
+- **`Last-Modified`**：表示資源的最後修改時間
+- **`Expires`**：表示資源的過期時間
 
 **主要是利用時間來控制 cache 的存取**
 (關於 HTTP cache 的部分，後面會再詳細介紹)
@@ -217,12 +217,12 @@ HTTP/1.1 標準解決了早期版本中發現的許多協議模糊性，擴展�
   <tbody>
     <tr>
       <td>HTTP method</td>
-      <td>擴展 `PUT`, `DELETE`, `OPTIONS` HTTP methods</td>
+      <td>擴展 <code>PUT</code>, <code>DELETE</code>, <code>OPTIONS</code> HTTP methods</td>
     </tr>
     <tr>
       <td>HTTP Authorization header</td>
       <td>
-        新增 Authorization 的 schema，使 HTTP 可以有不同類型的密碼
+        新增 <code>Authorization</code> 的 schema，使 HTTP 可以有不同類型的密碼
       </td>
     </tr>
     <tr>
@@ -332,12 +332,12 @@ Authorization: <scheme> <credentials>
 
 
 ### 擴展的 Caching 機制
-- **增加了 Etag 頭部**：<br />
-Etag 頭部是資源的唯一標識符，可以用來代替 Last-Modified 頭部。Etag 頭部可以有效防止資源被誤判為過期。<br /><br />
-- **引入了 Cache-Control 頭部**：<br />
-Cache-Control 頭部可以用來指定資源的緩存策略，例如是否可以緩存、緩存的時間等。Cache-Control 頭部可以讓客戶端和服務器更加靈活地控制資源的緩存。<br /><br />
-- **引入了 Vary 頭部**：<br />
-Vary 頭部可以用來指定影響資源緩存的因素，例如客戶端的 IP 地址、Cookie 等。Vary 頭部可以防止資源被緩存到客戶端的本地，從而提高資源的安全性
+- **增加了 `Etag` 頭部**：<br />
+`Etag` 頭部是資源的唯一標識符，可以用來代替 `Last-Modified` 頭部。`Etag` 頭部可以有效防止資源被誤判為過期。<br /><br />
+- **引入了 `Cache-Control` 頭部**：<br />
+`Cache-Control` 頭部可以用來指定資源的緩存策略，例如是否可以緩存、緩存的時間等。`Cache-Control` 頭部可以讓客戶端和服務器更加靈活地控制資源的緩存。<br /><br />
+- **引入了 `Vary` 頭部**：<br />
+`Vary` 頭部可以用來指定影響資源緩存的因素，例如客戶端的 IP 地址、Cookie 等。`Vary` 頭部可以防止資源被緩存到客戶端的本地，從而提高資源的安全性
 <br />
 
 
@@ -385,13 +385,13 @@ id1 --> id3
 
 <br /><br /><br />
 
-導致 **Head of blocking** 的問題產生，因此有了後續 HTTP/2.0 來進行優化，這部分明天繼續～
+導致 **Head of blocking** 的問題產生，因此有了後續 HTTP/2.0 來進行優化，請看下一篇～
 
 
 <br /><br />
 
 
-## 今天小結
+## 結論
 - 瞭解 HTTP 0.9 ~ HTTP 1.1 的主要功能是為了使網際網路快速普及，設計上簡單易用為目的
 - 瞭解 HTTP 0.9 只提供 Client `GET` method，和 Server 回傳 HTML response，只有最簡單的功能
 - 瞭解 HTTP 1.0 為了因應 Web browser 的誕生，和網路的快速發展，多了許多功能因應多樣需求，但還不是正式的網路傳輸標準協定
