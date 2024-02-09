@@ -1,0 +1,21 @@
+---
+sidebar_label: '[CSRF]'
+title: '[CSRF]'
+tags:
+  - CORS
+  - Security
+
+---
+
+
+<figure>
+  <img src="/img/csrf.png" width="500" />
+</figure>
+
+1. User 登入了 bank.com
+2. bank.com 將銀行的帳號 cookie 存在 User 的瀏覽器，瀏覽器所有的 tab 都存取得到
+3. User 進入 evil.com (偽造的惡意網站)
+4. evil.com 嘗試去存取了 bank.com 的資訊，因為有 cookie 的存在，所以打 api 會成功
+5. Hacker 就成功利用 evil.com 取得 User 的銀行帳戶資訊了
+
+<br />

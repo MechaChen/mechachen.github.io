@@ -34,7 +34,7 @@ title: '[Unit Test] 1.4 - 如何做好測試？ - 可維護篇'
 以下我會提供一些案例，就會有上述的問題，並且會提到如何改善
 
 
-<br />
+<br /><br />
 
 ## 情境一：不要用邏輯運算產出動態結果，使用靜態結果
 
@@ -82,7 +82,7 @@ describe('helloFunction', () => {
 * 預期結果清楚明瞭，不用再去猜測
 * 預期結果固定，不會有不確定性
 
-<br />
+<br /><br />
 
 
 ## 情境二：不要測試實作細節，測試使用者行為
@@ -193,10 +193,12 @@ test('shallow', () => {
 不要在測試程式碼中測試 or 使用邏輯，使用靜態結果，才能讓測試不脆弱，並真正執行我們在意的事
 
 
-<br />
+<br /><br />
 
 ### 參考資源
 
 * [單元測試的藝術](https://www.books.com.tw/products/0010765689) - Section 8.12 避免測試中帶著邏輯
 * [Software engineering at Google](https://software-engineering-at-google.gh.miniasp.com/#/zh-cn/Chapter-12_Unit_Testing/Chapter-12_Unit_Testing?id=dont-put-logic-in-tests-%e4%b8%8d%e8%a6%81%e6%8a%8a%e9%82%8f%e8%bc%af%e6%94%be%e9%80%b2%e6%b8%ac%e8%a9%a6%e4%b8%ad) -  Ch 12 - Don't Put Logic in Tests
 * [React Testing Library Creator - Kent C Dodds](https://kentcdodds.com/blog/why-i-never-use-shallow-rendering) - Why I Never Use Shallow Rendering
+
+<br /><br />

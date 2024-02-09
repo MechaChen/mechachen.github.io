@@ -30,7 +30,7 @@ const apiUploadUserData = async (userFields) => {
         uploadForm.append(key, value);
     });
 
-    await axios({
+    return await axios({
         method: 'post',
         url: '/users',
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -101,7 +101,7 @@ export const apiUploadUserData = async (userFields) => {
         uploadForm.append(key, value);
     });
 
-    await axios({
+    return await axios({
         method: 'post',
         url: '/users',
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -119,7 +119,7 @@ export const apiUpdateUser = async ({
         uploadForm.append(key, value);
     });
 
-    await axios({
+    return await axios({
         method: 'post',
         url: '/users',
         params: { uuid: userUuid },
@@ -143,7 +143,7 @@ export const apiUpdateUser = async ({
 <br />
 
 ### 監控
-自動 mock，用 jest.mock mock 整個檔案
+自動 mock，用 `jest.mock` mock 整個檔案
 
 ```jsx
 import { apiUploadUser, ... } from '/apis/users';

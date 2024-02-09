@@ -27,12 +27,16 @@ tags:
   />
 </figure>
 
+<br /><br />
+
 基本上就是： 
-```js
-Root Nameservers --> TLD Nameservers --> Authoritative Nameservers
+```mermaid
+flowchart TB
+id1["Root Nameservers"] --> id2["TLD Nameservers"]
+id2 --> id3["Authoritative Nameservers"]
 ```
 
-<br /><br />
+<br /><br /><br />
 
 完整的流程圖如下：
 <br />
@@ -46,9 +50,6 @@ Root Nameservers --> TLD Nameservers --> Authoritative Nameservers
 
 <br /><br />
 
-```mermaid
-asdfl --> asdfoi
-```
 
 大致上的流程為
 1. 找尋本地的 cache

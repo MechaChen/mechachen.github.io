@@ -1,0 +1,271 @@
+---
+sidebar_label: '[Implement] 實作 Redux'
+title: '[Implement] 實作 Redux'
+tags:
+  - Implement
+  - Redux
+
+---
+
+
+## Redux 大部分都是“慣例”
+
+其實使用 Redux，需要遵循很多慣例 or 規範，再搭配 Redux 簡短的程式碼，才能實現 Flux pattern 的概念，而我們要遵守的規範有一下三點：
+
+1. State 都存在在一個 single tree
+2. Action 表示狀態改變
+3. Reducer 翻譯 Action 然後改變狀態
+
+
+<br />
+
+
+### 1. State 都存在在一個 single tree
+
+<br />
+
+> State lives in a single tree
+
+<br />
+
+
+整個 app 的狀態如下：
+
+<br />
+
+```js
+const initialState = { count: 0 }
+```
+
+<br /><br />
+
+
+### 2. Action 表示狀態改變
+
+根據 Redux 的慣例，不要直接更改狀態 (mutate the state)
+
+```js
+state.count = 1
+```
+
+<br /><br />
+
+反之，創造一些可以讓開發者在 app 中使用的 action 來更改狀態
+
+```js
+const actions = {
+	increment: { type: 'INCREMENT' },
+	decrement: { type: 'DECREMENT' },
+};
+```
+
+
+<br /><br />
+
+
+### 3. Reducer 翻譯 Action 然後改變狀態
+
+最後一階段會呼叫一個 reducer
+reducer: 一個 pure function 會傳一個根據前一個 state 產生的新 copy 
+
+- 如果 `increment` action fire，增加 `state.count`
+- 如果 `decrement` action fire，增加 `state.count`
+
+
+```js
+const countReducer = (state = initialState, action) => {
+	switch (action.type) {
+		case actions.increment.type:
+			return { count: state.count + 1 };
+
+		case actions.decrement.type:
+			return { count: state.count - 1 };
+
+		default:
+			return state;
+	}
+}
+```
+
+<br /><br />
+
+有了開發者遵循這些規範，再搭配下列簡短的 Redux，才能使 Flux pattern 完整呈現
+
+<br /><br />
+
+## 實現 Redux
+
+### Requirements
+
+Redux 最關鍵的 api，就是 `createStore`，以下我們會來探討 `createStore` 的功能需求 & 如何實現
+
+<br />
+
+```js
+import { createStore } from 'redux';
+
+const store = createStore(counReducer);
+
+store.subscribe(() => {
+	console.log(store.getState());
+});
+
+store.dispatch(action.increment);
+// logs { count: 1 }
+
+store.dispatch(actions.increment);
+// logs { count: 2 }
+
+store.dispatch(actions.decrement);
+// logs { count: 1 }
+```
+
+<br />
+
+`createStore` 的需求
+- 接收一個 reducer function
+- 提供 `subscribe` 功能，讓外部可以監聽到 store 的 state
+- 提供 `dispatch` 功能，讓 user 可以透過 `action` 更改狀態
+
+<br /><br />
+
+### 初始樣板 (initial boilerplate)
+
+```js
+const createStore = (myReducer) => {
+	let listeners = [];
+	let currentState = yourReducer(undefined, {});
+}
+```
+
+Redux 利用 function programming 的 closure 概念，來像 Class 一樣保存狀態
+
+- `currentState`: 當我們使用 `undefined` 帶入時，預設會帶入上面的 `initialState`
+
+
+<br /><br />
+
+### `store.getState()`
+
+<br />
+
+> 回傳 store 最新的狀態
+
+<br />
+
+
+```js
+const createStore = (myReducer) => {
+	let listeners = [];
+	let currentState = myReducer(undefined, {});
+
+	// highlight-start
+	const getState = () => (
+		currentState
+	)
+	// highlight-end
+
+	return {
+		getState,
+	}
+}
+```
+
+<br /><br />
+
+
+### `store.dispatch(action)`
+
+<br />
+
+> 1. 將 `action` 和 `currentState` 產生一個新的 state
+> 2. 並通知所有的 listener
+
+<br />
+
+```js
+const createStore = (myReducer) => {
+	let listeners = [];
+	let currentState = myReducer(undefined, {});
+
+	const getState = () => (
+		currentState
+	);
+
+	// highlight-start
+	const dispatch = () => {
+		currentState = myReducer(currentState, action);
+
+		listeners.forEach((listener) => {
+			listener();
+		});
+	};
+	// highlight-end
+}
+```
+
+<br /><br />
+
+
+### `store.subscribe(listener)`
+
+<br />
+
+> 1. 讓你可以監聽 store 是不是有 state change (或是 action 被觸發)
+> 2. 同時也回傳一個 `unsubscribe` method，讓我們當 store 沒興趣時，可以取消監聽
+
+<br />
+
+```javascript
+const createStore = (myReducer) => {
+  let listeners = [];
+  let currentState = myReducer(undefined, {});
+
+  const getState = () => {
+    return currentState;
+  };
+
+  const dispatch = (action) => {
+    currentState = myReducer(currentState, action);
+
+    listeners.forEach((listener) => {
+      listener();
+    });
+  };
+
+	// highlight-start
+  const subscribe = (newListener) => {
+		listeners.push(newListener);
+
+		const unsubscribe = () => {
+			listeners = listeners.filter((l) => (
+				l !== newListener,
+			));
+		};
+
+		return unsubscribe;
+  };
+	// highlight-end
+
+  return {
+    getState,
+    dispatch,
+    subscribe,
+  };
+}
+```
+
+<br />
+
+
+## 結論
+1. Redux 的程式碼很間單，利用 Closure + Flux pattern 的概念就可以實現
+2. 大部分都是遵循慣例(Convention)，Redux 程式碼其實只佔一小部分
+
+<br /><br />
+
+### 參考資源
+- [How to Implement Redux in 24 Lines of JavaScript (freecodecamp.org)](https://www.freecodecamp.org/news/redux-in-24-lines-of-code/)
+- [React-Redux 100行代码简易版探究原理。（面试热点，React Hook + TypeScript实现）-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1612960)
+
+<br /><br />

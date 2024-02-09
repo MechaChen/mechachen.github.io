@@ -1,6 +1,6 @@
 ---
-sidebar_label: '[CORS] 1. CORS 是什麼？ 阻擋 CSRF 的利器'
-title: '[CORS] 1. CORS 是什麼？ 阻擋 CSRF 的利器'
+sidebar_label: '[CORS] 1. CORS 是什麼？ 為什麼要有 CORS ?'
+title: '[CORS] 1. CORS 是什麼？ 為什麼要有 CORS ?'
 tags:
   - CORS
   - Security
@@ -29,32 +29,28 @@ tags:
 
 ## 為什麼要有 CORS？
 
-避免 **CSRF (Cross-Site Request Forgery)**，舉例來說：
+簡單來說，就是
 
-<figure>
-  <img src="/img/csrf.png" width="500" />
-</figure>
-
-1. User 登入了 bank.com
-2. bank.com 將銀行的帳號 cookie 存在 User 的瀏覽器，瀏覽器所有的 tab 都存取得到
-3. User 進入 evil.com (偽造的惡意網站)
-4. evil.com 嘗試去存取了 bank.com 的資訊，因為有 cookie 的存在，所以打 api 會成功
-5. Hacker 就成功利用 evil.com 取得 User 的銀行帳戶資訊了
+:::info
+你是從其他家 domain 來的，要跟我家 domain 的 Server 互動是有些規範的
+:::
 
 <br />
 
-有了 CORS，因為 `evail.com` 跟 `bank.com` 是不一樣的 domain，就可以避免 `evil.com` 取得 `bank.com` 的 api response，並解決掉 CORS 了 🌈🌈🌈
+沒有 CORS 的話，駭客就可以在任意網站去跟你的 Server 做互動了
 
 
 <br /><br />
 
 ## 陷阱: Server 其實還是會處理 request
 
-雖說有了 CORS 之後，可以阻擋 CSRF，可是阻擋的方式只是
+雖說有了 CORS 之後，駭客不能隨意跟 Server 互動，但是阻擋的方式只是
 
 <br />
 
-> **Browser 不把 "已經取得 respones 的結果" 回傳給你看**
+:::caution
+**Browser 不把 "已經取得 respones 的結果" 回傳給你看**
+:::
 
 <br />
 

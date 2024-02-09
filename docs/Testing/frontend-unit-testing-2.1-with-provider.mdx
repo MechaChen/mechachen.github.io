@@ -9,8 +9,7 @@ title: '[Unit Test] 2.1 - 與 Provider 的測試'
 
 (如果對 Redux 等 Provider 已經熟悉，可以跳過此段)
 
-在現今的前端框架，當我們有多個 Components 需要共用一些設定 or 狀態時， <br />
-由於 Components 是呈樹狀結構，我們會將共用的設定 or 狀態放在這些 Components 共同且最近的 Parent node 進行統一個管理， <br />
+在現今的前端框架，當我們有多個 Components 需要共用一些設定 or 狀態時，由於 Components 是呈樹狀結構，我們會將共用的設定 or 狀態放在這些 Components 共同且最近的 Parent node 進行統一個管理，
 再由該 Parent node 將該設定 or 狀態一層層的傳遞下來，如下圖所示
 
 <br />
@@ -23,7 +22,7 @@ title: '[Unit Test] 2.1 - 與 Provider 的測試'
 
 <br /><br /><br /><br /><br />
 
-我們會放到 2 個元件的最近共同的 Parent node，並在藉由 Parent node 將狀態 or 設定一層層的傳遞下來，<br />
+我們會放到 2 個元件的最近共同的 Parent node，並在藉由 Parent node 將狀態 or 設定一層層的傳遞下來，
 好處是讓狀態 / 設定同步
 
 <br />
@@ -32,8 +31,8 @@ title: '[Unit Test] 2.1 - 與 Provider 的測試'
 
 <br /><br /><br /><br /><br />
 
-但是這樣會延伸一個問題，當樹狀結構越來越龐大時，且當 2 個元件相距很遠時，<br />
-共用的 Parent node 深度 (depth) 與接受狀態的子元件深度差就會非常多， <br />
+但是這樣會延伸一個問題，當樹狀結構越來越龐大時，且當 2 個元件相距很遠時，
+共用的 Parent node 深度 (depth) 與接受狀態的子元件深度差就會非常多，
 我們就要傳遞非常多層的元件才能將狀態 / 設定傳遞到我們的目標子元件 ( 前端稱此問題為 Prop-drilling )，如下圖
 
 <br />
@@ -42,9 +41,9 @@ title: '[Unit Test] 2.1 - 與 Provider 的測試'
 
 <br /><br /><br /><br /><br />
 
-此時，前端就發展出一個模式，稱作 **Provider Pattern**，<br />
-其形式為，將資料統一封裝在一個 Provider 裏，包在 root node 的上層， <br />
-只要是 child node，就可以直接透過 Provider 的 API，取得儲存在 Provider 的狀態 / 設定了， <br />
+此時，前端就發展出一個模式，稱作 **Provider Pattern**，
+其形式為，將資料統一封裝在一個 Provider 裏，包在 root node 的上層，
+只要是 child node，就可以直接透過 Provider 的 API，取得儲存在 Provider 的狀態 / 設定了，
 不用再一層層的傳下來
 
 <br />
@@ -63,9 +62,9 @@ title: '[Unit Test] 2.1 - 與 Provider 的測試'
 
 ## 在單元測試中，Provider 造成的問題
 
-但 Provider 模式，在單元測試中也會產生一些問題，<br />
-在單元測試中，我們只想要測試單一元件，<br />
-但是在此元件中，我們可能會用到不同 Provider 提供的狀態 / 設定， <br />
+但 Provider 模式，在單元測試中也會產生一些問題，
+在單元測試中，我們只想要測試單一元件，
+但是在此元件中，我們可能會用到不同 Provider 提供的狀態 / 設定， 
 這時，我們測試時，就需要另外將此元件包在 Providers 中，例如 <br />
 <br />
 
@@ -145,7 +144,7 @@ describe('TargetComponent', () => {
 
 <br /><br />
 
-想像一下如果我們每一個 test case 都需要這樣撰寫，那會是非常麻煩的步驟，<br />
+想像一下如果我們每一個 test case 都需要這樣撰寫，那會是非常麻煩的步驟，
 這也違反了 AOUT  中 Ch.8 提到 **好的單元測試** 的準則，包括：
 
 - 可讀性 ( Readability )
@@ -162,9 +161,9 @@ describe('TargetComponent', () => {
 - [Custom `render` - React Testing Library ](https://testing-library.com/docs/react-testing-library/setup/#custom-render)
 - [Setting Up a Reusable Test Render Function - Redux](https://redux.js.org/usage/writing-tests#setting-up-a-reusable-test-render-function)
 
-<br />
+<br /><br />
 
-> **主要的核心方法就是：改寫原本的 `render` 方法**
+> **主要的核心方法就是：改寫原本的 `render` 方法，讓 `render` 時預設帶入原本的 Provider**
 
 
 <br /><br />
@@ -172,9 +171,7 @@ describe('TargetComponent', () => {
 
 ## 覆寫原生的 `render`
 
-我們先將所有的 **Providers** 都集合在一起，<br />
-然後再客製化 React Testing Library 的 `render` function， <br />
-將 Providers 傳入 `render` 第 2 個參數，做一些初始化設定 <br />
+我們先將所有的 **Providers** 都集合在一起，然後再客製化 React Testing Library 的 `render` function，將 Providers 傳入 `render` 第 2 個參數，做一些初始化設定 <br />
 
 <br />
 
@@ -240,12 +237,12 @@ describe('TargetComponent', () => {
 
 ## Testing `render` with `Redux`
 
-Redux 也可以採用類似的做法，<br />
-我們可以將偽造的 redux state 傳入 `render` 的第 2 個參數 `option` 中，<br />
-( option 本來就可以傳入一些預設值，像是 initialProps，所以我覺得把 mock redux state 放在這裡是合理的 )
+Redux 也可以採用類似的做法，
+我們可以將偽造的 redux state 傳入 `render` 的第 2 個參數 `option` 中，
+( option 本來就可以傳入一些預設值，像是 `initialProps`，所以我覺得把 mock redux state 放在這裡是合理的 )
 
 
-```jsx
+```tsx
 import React from 'react'  
 import { render } from '@testing-library/react'  
 import { configureStore } from '@reduxjs/toolkit'  
@@ -303,16 +300,14 @@ const { getByTestId, debug } = renderWithRedux(
 
 ## 總結
 
-前端的 Provider 方式雖然解決了很多 React 樹狀結構的節點需共享狀態的問題，<br />
-但也造成單元測試上很大的困難，<br />
-我們可以利用預設帶有一些常用的 Provider，來簡化撰寫 Unit test 的過程，<br />
-使前端的單元測試更好維護和撰寫
+- 前端的 Provider 方式雖然解決了很多 React 樹狀結構的節點需共享狀態的問題，但也造成單元測試上很大的困難，
+**我們可以利用預設帶有一些常用的 Provider，來簡化撰寫 Unit test 的過程**，使前端的單元測試更好維護和撰寫
 
 <br />
 
 ## 參考文獻
-> - [Testing Library - Custom Render](https://testing-library.com/docs/react-testing-library/setup/#custom-render)
-> - [Redux - Writing Tests](https://redux.js.org/usage/writing-tests)
+- [Testing Library - Custom Render](https://testing-library.com/docs/react-testing-library/setup/#custom-render)
+- [Redux - Writing Tests](https://redux.js.org/usage/writing-tests)
 
 
 <br /><br />
