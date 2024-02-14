@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkbenson_doc=self.webpackChunkbenson_doc||[]).push([[4672],{4279:e=>{e.exports=JSON.parse('{"label":"Docker","permalink":"/docs/tags/docker","allTagsPath":"/docs/tags","count":1,"items":[{"id":"Deploy/catelog","title":"[Catelog] Docker \u76ee\u9304","description":"Docker \u57fa\u672c\u6982\u5ff5","permalink":"/docs/Deploy/catelog"}]}')}}]);
