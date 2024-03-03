@@ -1,0 +1,229 @@
+---
+sidebar_position: 2
+sidebar_label: '[Docker] 2. 是不是 VM 也可以做到同樣的事？ VM vs Container'
+title: '[Docker] 2. 是不是 VM 也可以做到同樣的事？ VM vs Container'
+tags:
+  - Docker
+
+---
+
+<br />
+
+## 前言：現在電腦太強大，一次只運作一個 application 太浪費
+
+在早期的時候，一個 application 只能在一個 Server 上，作業系統沒有辦法有效 & 安全的運作多個 application 在一個 Server 上
+
+所以我們要開一個新的 application，我們就必須重新買一個 Server，應用程式沒辦法完全的利用 Server 的全部能力，大約都只有用到 10% 的 Server 能力而已，在一台 Server 上只運作一個 application 是金錢上非常大的浪費
+
+
+<br />
+
+## 解方一：電腦裡的電腦，Virtual Machine (虛擬機)
+
+所以為了解決上述的問題，就發展出了 Virtual Machine
+
+VM 是一個軟體，它可以模擬一個完整的電腦系統，讓我們可以在上面做任何電腦可以做到的是，就像是電腦裡面還有電腦。
+所以，每個 VM 也會有自己的作業系統像是 Linux, Windows, Mac OS 等
+
+<br />
+
+
+<figure>
+  <img
+    src="/img/virtual-machine.png"
+    width="450"
+    alt="Virtual Machine"
+  />
+</figure>
+
+
+<figure>
+  <img
+    src="/img/virtual-machine-explain.png"
+    width="700"
+    alt="Virtual Machine explanation"
+  />
+</figure>
+
+<br /><br />
+
+
+### VM 構造簡介
+
+Virtual Machine 會建立在 **`硬體`** 和 **`Hypervisor(管理程序)`** 上，
+Hypervisor 讓我們可以把 Hardware 的資源分配到不同的 VM 上，例如
+- 可以分配的 CPU 核心數量
+- 可分配的記憶體大小
+
+<br />
+
+<figure>
+  <img
+    src="/img/hypervisor.png"
+    width="500"
+    alt="Virtual Machine"
+  />
+</figure>
+
+
+<br /><br />
+
+
+### VM 的缺點
+
+因為有自己的整套的作業系統，而且還獨自佔用硬體資源，像是
+- 佔用很多磁碟空間
+- 佔用很多 RAM 和 CPU
+
+<br />
+
+也導致了
+- 啟動很慢
+- 需要不同的證照給每個作業系統
+
+
+<br /><br />
+
+
+## 解方二：Container (容器)
+
+<figure>
+  <img
+    src="/img/containers.webp"
+    width="400"
+    alt="Container engine"
+  />
+</figure>
+
+<br /><br />
+
+原本我們的目的只是要讓本機上可以運作多個 application，但是 VM 這個解決方案太過於笨重，所以就有了 Container 這個解決方案太過於笨重，
+所以就有了 Container 這個方案，且跟 VM 最大的區別是
+
+<br />
+
+> ***它不需要自己的作業系統核心 (OS Kernel)***
+
+<br />
+
+它是運作在本機的 OS 上的，所以它不需要像是 VM 一樣，佔用很多硬體資源
+
+<figure>
+  <img
+    src="/img/vm-vs-container.png"
+    width="500"
+    alt="Container engine"
+  />
+</figure>
+
+
+<br /><br />
+
+Container 是一個包含一個 app 上運作上需要的所有資源，包括
+- 專案檔案
+- 語言執行環境
+
+
+<br /><br />
+
+而 Docker 是對 Container 進行 
+- 創造
+- 產生
+- 管理
+
+最主流的平台
+
+<br />
+
+:::info Docker 背後還是用到了 VM
+當安裝 Docker 時，你會發現不管在 Windows, Mac OS 或是 Linux，用 Container 啟動的 app 都是使用 Linux 系統的，
+這是因為 Docker 在背後幫你起了 Linux VM，所以你的 app 都會是在 Linux 上運作的
+:::
+
+
+<br /><br />
+
+### Container engine
+
+有了 Container engine，我們就可以根本機的 OS kernel 交互作用，而不需要像是 VM 一樣，需要自己的 OS kernel，其功能包括
+
+- 解包 container 裏的 files
+- 並把 files 交給作業系統的核心
+
+<figure>
+  <img
+    src="/img/container-engine.png"
+    width="500"
+    alt="Container engine"
+  />
+</figure>
+
+
+<br /><br />
+
+
+### 優點
+
+- 更小的檔案大小
+- 輕量級
+- 超級快
+- 消耗更少的 RAM 和 CPU
+- 攜帶性超高
+
+
+<br />
+
+### 缺點
+
+1. Container files 必須運作在跟其被打包時相同的 Operating system 下
+
+<div style={{ display: 'flex'}}>
+  <figure>
+    <img
+      src="/img/container-cons.png"
+      width="200"
+      alt="Container cons"
+    />
+  </figure>
+
+  <figure>
+    <img
+      src="/img/container-cons-2.png"
+      width="200"
+      alt="Container engine"
+    />
+  </figure>
+</div>
+
+<br /><br />
+
+2. 如果 Server 的 OS 壞了，那 container 就會全部掛掉
+
+
+<figure>
+  <img
+    src="/img/container-cons-3.png"
+    width="200"
+    alt="Container engine"
+  />
+</figure>
+
+
+<br /><br />
+
+
+
+<br /><br />
+
+## 結論
+1. Container 相較於 VM 來說，不用自己的 OS kernel 和另外分配硬體資源，所以它更輕量級，更快，更省資源
+2. 但 Container 也是有缺點，例如過度本機的 OS kernel，造成 OS 必須統一和本機 OS 壞了，所有 Containers 也都會掛掉
+
+<br /><br />
+
+### 參考資源
+- [Virtual Machines vs Containers (youtube.com)](https://www.youtube.com/watch?v=eyNBf1sqdBQ)
+- [What is a Container? | Docker](https://www.docker.com/resources/what-container/)
+- [A Beginner-Friendly Introduction to Containers, VMs and Docker (freecodecamp.org)](https://www.freecodecamp.org/news/a-beginner-friendly-introduction-to-containers-vms-and-docker-79a9e3e119b/)
+
+<br /><br />

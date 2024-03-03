@@ -1,0 +1,247 @@
+---
+sidebar_position: 2
+sidebar_label: '[Docker] 5. 來撰寫簡單的 Dockerfile 來建立 Docker Image 吧'
+title: '[Docker] 5. 來撰寫簡單的 Dockerfile 來建立 Docker Image 吧'
+tags:
+  - Docker
+
+---
+
+<br />
+
+:::note 學習目標
+1. 瞭解 Dockerfile 跟 Image 的關係
+2. 了解 Dockerfile 的基本語法
+3. 瞭解如何利用 Dockerfile 建立 Image
+:::
+
+## 問題：Dockerfile 跟 Image 的關係？
+
+<br />
+
+在 [第三篇](./docker-3-dockerfile-image-container) 有提到，Image 就是一個 App 所需要的環境跟產品程式碼，但不會運作，因為還沒被丟到進程 (Process) 中，
+就像一個建築物，該有的設備和架構都有了，可是沒有電無法運作
+
+<br />
+
+而 Image 也跟建築物一樣，構造是一層一層的，每一行都是組成 App 的要素之一
+
+<figure>
+  <img
+    src="/img/image-layers.png"
+    alt="Image Layers"
+    width={500}
+  />
+</figure>
+
+
+<br /><br />
+
+而 Dockerfile 就定義 Image 的建築物藍圖，每一行都是一層 Image，最後組層一個完整的 Image，以下為簡單的完整範例：
+
+```python
+# Dockerfile
+
+## 1st 層：從 node:20-alpine 作為第一層
+FROM node:20-alpine
+
+## 2nd 層：設定工作目錄
+WORKDIR /app
+
+## 3rd 層：拷貝現在本機的資料夾到 Image 中的 /app 資料夾
+COPY . .
+
+## 4th 層：安裝 npm 套件
+RUN npm install
+
+## 5th 層：Container 運行時，開放 4000 port
+EXPOSE 4000
+
+## 6th 層：Container 運行時，執行 app.js
+CMD ["node", "app.js"]
+```
+
+<br /><br />
+
+## Dockerfile 的基本語法有哪些？
+
+### `FROM`
+
+```python
+# format
+FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]
+
+# example
+FROM node:20-alpine
+```
+
+<br />
+
+`FROM`：開始啟動建立 Image 的階段，並且設定 `parent image` 作為基底。尤其是跟作業系統相關的 Image，我們可以直接從這裡引用，
+例如 
+- `node:20-alpine`，這個 Image 就是一個已經包含了 Node.js 的環境，並且是基於 Alpine Linux 的輕量 Image
+- `ubuntu:20.04`，這個 Image 就是一個已經包含了 Ubuntu 20.04 的環境
+
+<br />
+
+:::info Base image
+若一開始沒有指定 Image，而是使用 `FROM scratch`，就稱做一個 Base Image
+:::
+
+<br />
+<br />
+
+### `WORKDIR`
+```python
+# format
+WORKDIR /path/to/workdir
+
+# example
+WORKDIR /app
+```
+<br />
+
+將 Container 的工作目錄設定在 Container 的指定的 folder 底下，
+後續 `RUN`, `CMD`, `ENTRYPOINT`, `COPY` and `ADD` 都會在指定的目錄下執行
+
+<br />
+<br />
+
+### `COPY`
+
+```python
+# format
+COPY [--chown=<user>:<group>] [--chmod=<perms>] <src>... <dest>
+
+# example 1
+COPY . .
+
+# example 2
+COPY . /app
+```
+example 1： <br />
+
+- 第一點為複製的對象，`.` 代表要複製現在的資料夾 & 底下的所有檔案
+- 第二點為貼上的資料夾位置，`.` 代表將複製的資料夾貼到 Image 的 root folder
+
+<br />
+
+example 2： <br />
+
+- 第一點同上
+- 第二點為貼上的資料夾位置，`.` 代表將複製的資料夾貼到 Image 的 app folder
+
+<br />
+
+:::caution 有設定 `WORKDIR` 的話
+如果有設定 `WORKDIR`，則 `COPY` 的目的地會是從 `WORKDIR` 的位置，例如：
+
+```python
+WORKDIR /app
+
+COPY . .
+```
+
+<br />
+
+這樣的話，`COPY` 的目的地就會是 `/app`，而不是 Image 的 root folder
+:::
+
+
+<br /><br />
+
+
+### `RUN`
+
+
+```python
+# example 1
+RUN npm install
+
+# 在 build image 時會去執行
+```
+
+<br />
+
+`RUN`：在 build image 時會去執行，例如安裝套件、執行指令等等，例如：
+- `npm install`：安裝 package.json 中的記錄的套件，將需要的套件安裝到 Image 中
+- `apt-get install -y curl`：用 Ubuntu 內建的安裝套件指令，安裝 curl 到 Image 中
+
+
+<br />
+<br />
+
+### `EXPOSE`
+
+```python
+EXPOSE 4000
+```
+
+<br />
+
+`EXPOSE`：表示運行中的 Docker Container 會監聽的 port。就像一棟建築物，當建築物有電時，會開放的特定門口，例如 4 號出入口
+
+<br />
+<br />
+
+
+### `CMD`
+
+```python
+# format
+CMD command param1 param2
+
+# example
+CMD ["node", "app.js"]
+```
+
+<br />
+
+`CMD`：當 Docker Image 被丟到進程中變成 Container 時，會執行的指令。就像建築物有電了後，需要去打開一樓的電燈、準備好工作人員，一樓才能服務客人
+
+
+<br />
+<br />
+<br />
+
+
+
+
+## 如何利用 Dockerfile 建立 Image？
+
+```python
+# format
+docker build [OPTIONS] PATH | URL | -
+
+# example
+docker build -t myapp .
+```
+
+<br />
+
+- `-t`： 代表 tag，即 image 的名稱
+- `.`： 表示現在的資料夾目錄，docker 會根據現在的資料夾去尋找 Dockerfile，並依據此 Dockerfile 建立 Image
+
+
+<br /><br />
+
+## 結論
+1. Dockerfile 與 Image 的關係就是藍圖與建築物，Dockerfile 的每一行都是 Image 的一層
+2. 一個簡單的 Dockerfile 需要基本語法如下：
+    - `FROM`：建立 Image 的基底
+    - `WORKDIR`：指定 Image 的工作目錄
+    - `COPY`：複製本機的資料夾到指定 Image 的位址中
+    - `RUN`：在 build Image 時執行的指令
+    - `EXPOSE`：開始運行，Container 對外開放的 port
+    -`CMD`：開始運行，變成 Container 後執行的指令
+
+3. 利用 `docker build` 指令，就可以根據指定的 Dockerfile 建立 Image 
+
+<br /><br />
+
+### 參考資源
+- [Docker Crash Course #4 - Parent Images & Docker Hub (youtube.com)](https://www.youtube.com/watch?v=ZVQmnziXEpA&list=PL4cUxeGkcC9hxjeEtdHFNYMtCpjNBm3h7&index=4)
+- [Dockerfile reference | Docker Docs](https://docs.docker.com/reference/dockerfile)
+- [Dockerfile reference | Docker Docs](https://docs.docker.com/reference/cli/docker/image/build/)
+
+<br /><br />

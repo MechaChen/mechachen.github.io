@@ -1,0 +1,109 @@
+---
+sidebar_position: 2
+sidebar_label: '[Docker] 4. 建築物的基底：Parent Image'
+title: '[Docker] 4. 建築物的基底：Parent Image'
+tags:
+  - Docker
+
+---
+
+<br />
+
+## 問題：從 0 ~ 1 太累了，有沒有現成的基底可以用？
+
+前面我們說到 Image 就是一個沒有電源的建築物，那我們說要建立一個 Image，就是要從 0 開始建立一個建築物，這樣太累了，有沒有現成的基底可以用？
+
+
+<br /><br />
+
+
+## 解方： Parent image
+
+<figure>
+  <img
+    src="/img/parent-image.png"
+    width={500}
+    alt=""
+  />
+</figure>
+
+
+<br />
+
+這時候我們就可以利用外部現有 Docker image 作為我們的基底，叫做 **Parent Image**，去作為我們的基底，像是：
+
+<table>
+  <thead>
+    <tr>
+      <th>Image</th>
+      <th>內容</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="https://hub.docker.com/_/ubuntu" target="_blank">ubuntu</a></td>
+      <td>
+        <ul>
+          <li>一些 OS 的工具和 library</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><a href="https://hub.docker.com/_/node" target="_blank">node</a></td>
+      <td>
+        <ul>
+          <li>一些 OS 的工具和 library</li>
+          <li>Node.js 的執行環境</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
+
+:::caution 完整的 Operating system 跟 Parent Image 的差異
+|                   | OS                                     | Parent Image                                                               |
+| ----------------- | -------------------------------------- | -------------------------------------------------------------------------- |
+| **核心 (Kernel)** | 有                                     | 使用宿主的核心(mac 中，Docker Desktop 會幫你開一個簡單的 Linux VM) |
+| **使用者介面**    | 圖形用戶界面(GUI)或命令行介面(CLI)     | 通常沒有 GUI。只提供 CLI                                                   |
+| **資源管理**      | 內存、處理器、磁盤等資源的完整管理系統 | 依賴於 Docker 引擎和宿主機的資源管理                                       |
+| **系統服務**                  | 包括日誌、排程、網路設置等服務                                       | 通常只包括最基本的服務。某些最小化的基礎映像檔甚至可能不包含這些                                                                           |
+:::
+
+<br />
+
+### 如何引用
+
+執行 
+
+```bash
+Docker pull node
+```
+
+<br />
+
+就會幫我們把 docker 相關的 image 存到本機的特定的資料夾，
+預設會下載最新版，但我們也可以指定我們要的版本
+
+
+<figure>
+  <img
+    src="/img/docker-pull-parent-image.png"
+    width={500}
+    alt=""
+  />
+</figure>
+
+<br /><br />
+
+## 結論
+
+利用 Parent Image，打造 Image 的基底，讓我們可以快速的建立自己的 Image
+
+<br /><br />
+
+### 參考資源
+- [Docker Crash Course #4 - Parent Images & Docker Hub (youtube.com)](https://www.youtube.com/watch?v=ZVQmnziXEpA&list=PL4cUxeGkcC9hxjeEtdHFNYMtCpjNBm3h7&index=4)
+
+<br /><br />

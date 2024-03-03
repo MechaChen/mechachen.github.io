@@ -1,0 +1,99 @@
+---
+sidebar_position: 2
+sidebar_label: '[Docker] 1. 什麼是 Docker Container？ 為什麼需要 Docker Container？'
+title: '[Docker] 1. 什麼是 Docker Container？ 為什麼需要 Docker Container？'
+tags:
+  - Docker
+
+---
+
+<br />
+
+## 問題：每個專案的環境都不一樣，好煩啊 😫
+
+### 問題一：本機的程式語言版本不一樣
+
+<br />
+
+如果我用某些特定的 environment 去執行我的 project，那如果要確保在其他 teamate 也可以正常的運作同一包專案，其他人必須安裝跟我一樣的環境設定，甚至版本可能也要一樣
+( 例如都需要安裝 Node.js，然後都要安裝 Node.js 17.0 )
+
+
+<figure>
+  <img
+    src="/img/team-node-versions.png"
+    width="500"
+    alt="What is Docker?"
+  />
+</figure>
+
+<br />
+
+想像如果你不只有一包專案要處理，如果：
+- 專案 1 需要 Node.js 8.0.0
+- 專案 2 需要 Node.js 12.0.0
+- 專案 3 需要 Python 3.6.0, Node.js 18.0.0 etc
+
+
+<br />
+
+
+那如果我們需要同時開發多個專案，開發時就會常常需要切換程式語言的版本，例如使用 `nvm`、`pyenv` 來切換，會讓我們在開發上非常不方便
+
+
+<br />
+
+
+### 問題二：Operating system 不一樣
+
+
+我們團隊因為是有台灣 team 跟菲律賓 team 合作，而台灣 team 用 mac 居多，菲律賓 team 用 Windows 居多，導致我們有時候在開發時的結果不太一樣，所以後來就統一用 Docker container 開發了，這樣大家的開發過程也會都是一樣的
+
+
+
+<br /><br />
+
+
+## 解方：Docker Container
+
+因此，為了解決這些問題，就出現了 Docker Container！！！
+讓我們可以將這些所需環境跟我們的專案全部包在一起，我們在開發時就不用考慮上述環境的問題了 🎉🎉🎉
+
+<br />
+
+而將我們 App 所需環境 & 產品程式碼會被放 Container 裏，我們要開發時，只需要去運行這個 Container 就可以了
+
+
+<figure>
+  <img
+    src="/img/container-illustration.png"
+    width="150"
+    alt="What is Docker?"
+  />
+</figure>
+
+
+<br /><br />
+
+
+我們在同一個電腦上，就可以利 Container 去運行不同的專案而不用一直擔心環境的問題，這樣就可以讓我們的開發過程更加順暢 🥳🥳🥳
+
+<figure>
+  <img
+    src="/img/containers.png"
+    width="500"
+    alt="What is Docker?"
+  />
+</figure>
+
+
+
+<br /><br />
+
+
+## 結論
+- 利用 Docker Container 可以讓我們運行 App 所需要的環境 + 程式碼都包裝在一起，減少需要面對不同專案有不同環境的問題
+
+
+
+<br /><br />

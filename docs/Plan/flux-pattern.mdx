@@ -1,5 +1,4 @@
 ---
-sidebar_position: 0
 sidebar_label: '[Design Pattern] Flux pattern'
 title: '[Design Pattern] Flux pattern'
 tags:
@@ -12,32 +11,39 @@ tags:
 
 ### 問題：混亂的資料流向
 
-- 在前端中，我們常用的 MVC 的每個部分資料流向都可以是雙向的，若沒有良好的慣例或維護，就會造成資料流難以掌控，後續專案難以維護
+在前端中，我們常用的 MVC 的功能只有幫我們做到關注點分離 (Separate of Concern; Soc)，也就是幫我們把程式碼分成 Model, View, Controller 三個部分而已，
+但並沒有限制我們的狀態要存在在哪，並且如何有規律的更改我們的狀態
+
+<figure>
+  <img src="/img/mvc.webp" width={500} />
+  <figcaption>(圖片來源：<a href="https://tw.alphacamp.co/blog/mvc-model-view-controller" target="_blank">MVC架構是什麼？認識 Model-View-Controller 軟體設計模式</a>)</figcaption>
+</figure>
+
+<br />
+<br />
+
+在 MVC 中的每個部分都可以有自己的狀態，且任部分都可以更改任何位置的狀態，例如 Model 可以改 View 內的狀態，Controller 可以改 Model 的狀態
+
+若沒有良好的慣例或維護，就會造成資料流難以掌控，後續專案難以維護
 
 ( 有維護過 jQuery 專案的就知道 🤪 )
 
 <figure>
-  <img src="/img/mvc.webp" width={500} />
-  <figcaption>(圖片來源：https://tw.alphacamp.co/blog/mvc-model-view-controller)</figcaption>
-</figure>
-
-<br />
-
-<figure>
   <img src="/img/mvc-problem.png" width={500} />
-  <figcaption>(圖片來源：https://www.youtube.com/watch?v=nYkdrAPrdcw&list=PLb0IAmt7-GS188xDYE-u1ShQmFFGbrk0v&t=621s)</figcaption>
+  <figcaption>(圖片來源：<a href="https://www.youtube.com/watch?v=nYkdrAPrdcw&list=PLb0IAmt7-GS188xDYE-u1ShQmFFGbrk0v&t=621s" target="_blank">Hacker Way: Rethinking Web App Development at Facebook</a>)</figcaption>
 </figure>
 
 <br /><br />
 
-- 提供一個前端的概念，讓大家可以遵循，讓大規模的開發和維護上不會有不知道資料流向的問題
+
+所以，Flux pattern 就是提供一個概念讓大家可以遵循，讓大規模的開發和維護上不會有不知道資料流向的問題
 
 
 <br /><br />
 
 ## 什麼是 Flux?
 
-讓 app data 的流向遵循 Unidirectional data flow，以解決 MVC 沒有定義資料流向的，造成維護困難的問題
+讓 app 的資料流向遵循單一資料流 (Unidirectional data flow)，以解決 MVC 沒有定義資料流向的，造成維護困難的問題
 
 <figure>
   <img src="/img/flux-pattern.png" />
@@ -45,13 +51,18 @@ tags:
 
 <br /><br />
 
-同時並在
+Flux pattern 就我的理解，可以分為兩個階段：	
 
-1. 更改 store state 時，使用 Singleton 且限制只有 action 能更改 state
+1. Singelton pattern：先產生一個全域的 Store，限制其存取的方式。
+	接者所有的 View 可以透過一個行動 (Action)，並搭配特定的調動者 (Dispatcher)，去改變指定的 Store 裡的狀態
+
+	ex：我們點擊登出按鈕，那我們就移除儲存在全域的登入狀態
+
 ```mermaid
 flowchart LR
 subgraph Singleton pattern
 direction LR
+View --> Action
 Action --> Dispatcher
 Dispatcher --> Store
 end
@@ -59,12 +70,17 @@ end
 
 <br /><br />
 
-2. 更新 View 時，在 Store state 更新時利用 Observer 通知訂閱的 View
+2. Observer pattern：更新 View 時，在 Store state 更新時通知所有訂閱的 View(s)
+
+	ex：所有的頁面知道登入狀態改變了，就都會導回登入頁面
+
 ```mermaid
 flowchart LR
 subgraph Observer pattern
 direction LR
-Store --> View
+Store --> id1["View 1"]
+Store --> id2["View 2"]
+Store --> id3["View 3"]
 end
 ```
 
@@ -77,24 +93,23 @@ end
 
 ### **Singleton**: 限制改變 store 的 state 的方法
 
-利用 store 作為整個 app 的 Singleton Pattern，為整個 app 所有狀態的集合體 & 單一個存在，只能透過 action 去改變 store 的值，限制其存取，讓我們可以透過一個統一的 state 區塊去種整個資料流的更新
+利用 Singleton Pattern 讓整個 app 的 global store 只有一個單一的存在，且只能透過指定的 action 去改變 store 的值，限制其存取，讓我們可以透過一個統一的 state 區塊去種整個資料流的更新
 
 <br />
 
+產生全局單一的 Store，並且限制其存取的方式
 ```js
-// Actions
-const actions = {
-	increment: { type: 'INCREMENT' },
-	decrement: { type: 'DECREMENT' },
-};
 
-// Reducer: manipulate store's state change
+// Store's state
+const initialState = { count: 0 };
+
+// Store's 處理器 (Reducer): 根據 action 去改變 store 的 state
 const countReducer = (state = initialState, action) => {
 	switch (action.type) {
-		case actions.increment.type:
+		case 'INCREMENT':
 			return { count: state.count + 1 };
 
-		case actions.decrement.type:
+		case 'DECREMENT':
 			return { count: state.count - 1 };
 
 		default:
@@ -102,14 +117,35 @@ const countReducer = (state = initialState, action) => {
 	}
 }
 
-// 
-dispatch(actinos.increment);
-store.getState() // { count: 1 }
+const store = createStore(countReducer);
+export store;
+```
+
+<br />
+
+利用 action 被 dispatch 的方式，去改變 store 的 state
+
+```js
+// Update store's state
+
+import store from './store';
+
+// Actions
+const actions = {
+	increment: { type: 'INCREMENT' },
+	decrement: { type: 'DECREMENT' },
+};
+
+// Dispatcher dispatch action
+store.dispatch(actions.increment);
+
+// store's state changed
+store.getState(); // { count: 1 }
 ```
 
 <br /><br />
 
-### Observer pattern: 通知所有的 view，store state 改變了
+### **Observer pattern**: 通知所有的 views，store state 有變化了
 
 在 Redux 的程式原始碼中，實現 `dispatch` 的部分，當利用 reducer 跟 action 產生新的 store state 時，就會通知所有註冊這個 store 的對象，通常是一個 view，或者 React 的一個 Component 等，這便是利用的 Observer pattern 的概念
 

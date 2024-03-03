@@ -1,0 +1,175 @@
+---
+sidebar_position: 2
+sidebar_label: '[Docker] 6. 開始運作你的 app：啟動 & 停止 Docker Container'
+title: '[Docker] 6. 開始運作你的 app：啟動 & 停止 Docker Container'
+tags:
+  - Docker
+
+---
+
+<br />
+
+:::note 學習目標
+1. 瞭解 Dockerfile 跟 Image 的關係
+2. 了解 Dockerfile 的基本語法
+3. 瞭解如何利用 Dockerfile 建立 Image
+:::
+
+## Start Container
+
+### by UI
+
+要啟動一個 Container，我們在 docker desktop 對一個 Image 做 Run
+
+<figure>
+  <img src="/img/docker-run-by-ui.png" alt="Docker run by UI" />
+</figure>
+
+<br /><br />
+
+接著就會提供一些選項，像是讓我們客製化
+- Container expose 的 port
+- 最後我們主機上顯示的 port
+
+此處，我們將 Container port 設定為 4000，主機上的 port 為 4001
+
+<figure>
+  <img
+    src="/img/docker-run-setting.png"
+    alt="Docker run setting"
+    width="350"
+  />
+</figure>
+
+
+<br /><br />
+
+在我們瀏覽器上，會看見 Server 在 4001 port 運行
+
+<figure>
+  <img
+    src="/img/docker-run-result.png"
+    alt="Docker run result"
+    width="400"
+  />
+</figure>
+
+<br /><br /><br />
+
+### by Terminal
+
+使用
+
+```bash
+docker images
+```
+
+就可以顯示出目前所有存在的 Image
+
+<figure>
+  <img
+    src="/img/docker-show-images.png"
+    alt="Docker run by UI"
+  />
+</figure>
+
+
+<br /><br />
+
+我們可以藉由
+
+```bash
+docker run <Repository>
+```
+
+來開啟一個以此 `<REPOSITORY>` 為 Image 的 Container
+
+<br /><br />
+
+我們可以在 `run` & `<REPOSITORY>` 中間客製化 Container 的名稱
+
+```bash
+docker run --name <Container Name> <Repository>
+```
+
+<br /><br />
+
+
+#### 客製化 `port`
+
+客製化 port 包含 2 部分
+包括
+- Container 的 port
+- 主機上的 port
+
+```bash
+docker run --name <Container Name> <Repository> -p <Host Port>:<Container Port>
+
+# example
+docker run --name test-container test-image -p 4001:4000
+```
+
+
+如果不想要 docker Container 運行時，顯示在你的 terminal，你可以加入 `-d` flag (detached)，就不會阻擋 terminal，可以繼續在 terminal 輸入其他指令了
+
+
+<br /><br />
+
+#### Start already existed Container
+
+如果我們想要啟用已經存在，但狀態是 **Exited** 的 Container，
+我們可以用
+
+```bash
+docker start <Container Name>
+```
+
+<br /><br /><br />
+
+## Stop Container
+
+### by terminal
+
+#### show current Container
+
+利用 
+
+```bash
+docker ps
+```
+
+來確認現在所有 *In-Use* 的 Container 的，
+**Exited** 的不會顯示在這
+( `ps` === Process )
+
+<figure>
+  <img
+    src="/img/docker-show-running-containers.png"
+    alt="Docker run by UI"
+  />
+</figure>
+
+
+若我們想要顯示 **Exited** 的 Container，我們可以加入 `-a` flag，表示 all，顯示所有的 Container
+
+<br /><br />
+
+#### Stop Container
+
+我們可以利用
+
+```bash
+docker stop <Container Name or Container ID>
+```
+
+來終止一個 Container 的運行
+
+
+
+ 
+<br /><br />
+
+### 參考資源
+- [Docker Crash Course #7 - Starting & Stopping Containers (youtube.com)](https://www.youtube.com/watch?v=ZPEpreOpqao&list=PL4cUxeGkcC9hxjeEtdHFNYMtCpjNBm3h7&index=7)
+
+<br /><br />

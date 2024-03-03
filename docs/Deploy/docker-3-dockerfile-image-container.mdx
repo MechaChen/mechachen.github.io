@@ -1,0 +1,143 @@
+---
+sidebar_position: 2
+sidebar_label: '[Docker] 3. 跟 Docker 有關的一些核心名詞：Dockerfile, Image 跟 Container'
+title: '[Docker] 3. 跟 Docker 有關的一些核心名詞：Dockerfile, Image 跟 Container'
+tags:
+  - Docker
+
+---
+
+
+:::note 學習目標
+1. 瞭解什麼是 Dockerfile
+2. 瞭解什麼是 Image
+3. 瞭解什麼是 Container
+4. 瞭解彼此之間的關係
+:::
+
+<br />
+
+## 問題：Docker 的核心內容有哪些？ 到底什麼是 Dockerfile, Image 跟 Container？
+
+### 一個簡單的比喻：蓋大樓
+
+<figure>
+  <img src="/img/docker-elements-analogy.jpg" alt="Docker elements analogy" />
+</figure>
+
+假設我們今天要蓋大樓，那我們主要有三個步驟要完成：
+1. 畫大樓設計圖
+2. 根據設計圖蓋大樓
+3. 大樓蓋好後，給予電源，讓大樓可以運作
+
+<br />
+
+而這三個步驟分別對應到 Docker 的三個核心元素：
+
+1. Dockerfile： 大樓的設計藍圖
+2. Image： 根據設計圖蓋好的大樓，但還不能運作
+3. Container： 運作中的大樓，人們可以進出並互動
+
+
+<br /><br />
+
+
+### 比喻 vs 現實
+
+<figure>
+  <img src="/img/docker-elements-illustration.jpg" alt="Docker elements illustration" />
+</figure>
+
+對比到現實中呢，這三個元素分別是：
+
+1. `Dockerfile`： 一個設計腳本，定義了我們所需要的專案資源
+2. `Image`： 一包已經建立好的專案資源，根據 Dockerfile 所建立，比如一個 Node.js 的環境 + 專案程式碼，包含 HTML + JS + CSS
+3. `Container`： 一包已經進到進程中的專案程式碼，Image 運行後所產生，像是一個 Node.js 的 Server，可以當作 app 互動
+
+
+<br /><br />
+
+
+## Dockerfile, Image, Container 說明
+
+### Dockerfile
+
+一個建立完整專案的腳本，可以想像成是整個建築物的草稿，每一行都代表草稿上建築物的每一層 (Layer)，
+我們會根據 Dockerfile 去 `BUILD` Image，範例如下：
+
+<br />
+
+```python
+# Dockerfile
+
+## 1st 層：從 node:20-alpine 作為第一層
+FROM node:20-alpine
+
+## 2nd 層：設定工作目錄
+WORKDIR /app
+
+## 3rd 層：拷貝現在本機的資料夾到 Image 中的 /app 資料夾
+COPY . .
+
+## 4th 層：安裝 npm 套件
+RUN npm install
+
+## 5th 層：Container 運行時，開放 4000 port
+EXPOSE 4000
+
+## 6th 層：Container 運行時，執行 app.js
+CMD ["node", "app.js"]
+```
+
+
+
+<br /><br />
+
+### Image
+
+Image 是一個完整的專 & 環境，可以想像成是一個大樓，裡面有所有的設施，但還不能運作，對比過來就是 Image 沒有 CPU 跟 Memory，無法運作
+
+Image 是由一層一層的 Layer 組成，就像大樓的每一層，堆疊成一個完整的大樓
+
+<br />
+
+<figure>
+  <img
+    src="/img/image-layers.png"
+    alt="Image Layers"
+    width={500}
+  />
+</figure>
+
+<br />
+
+<br /><br />
+
+### Container
+
+一個運行中的 Image，可以想像成是蓋好的大樓運作中，人們可以進出並互動，等同於 Image 已經被給予了 CPU 跟 Memory，可以運作
+
+<br />
+
+<figure>
+  <img
+    src="/img/container-instance.png"
+    alt="Container instacne"
+    width={300}
+  />
+</figure>
+
+<br /><br />
+
+## 結論
+1. Docker 運作的整個流程就像是蓋大樓
+2. Dockerfile 就是一個腳本，根據這個腳本建立專案環境和取得需要的產品程式碼，就像是大樓的設計藍圖
+3. Image 就是一包專案，包含執行環境跟產品程式碼，但不能互動，就像是蓋好的大樓，但還不能運作
+4. Container 就是運行中的一包專案，就像是運作中的大樓，可以進出並互動
+
+<br /><br />
+
+### 參考資源
+- [Docker Crash Course #4 - Parent Images & Docker Hub (youtube.com)](https://www.youtube.com/watch?v=ZVQmnziXEpA&list=PL4cUxeGkcC9hxjeEtdHFNYMtCpjNBm3h7&index=4)
+
+<br /><br />
