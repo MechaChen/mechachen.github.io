@@ -1,6 +1,6 @@
 ---
-sidebar_label: '[Implement] 實作 react-redux'
-title: '[Implement] 實作 react-reudx'
+sidebar_label: '[Implement] 60 行實現 react-redux'
+title: '[Implement] 60 行實現 react-reudx'
 tags:
   - Implement
   - react-redux
@@ -76,7 +76,7 @@ return (
 
 <br />
 
-主要是因為使用 `useContext(context)` 時，還是會取到整個 context object，當 context object 有值變動時，就會 re-render，進而 create 一個新的 context object，就算用了 `useMemo` 也一樣
+主要是因為使用 `useContext(context)` 時，還是會取到整個 `contextValue` object，當 `contextValue` object 內有值變動時，就會 re-render，進而 create 一個新的 `contextValue` object，就算用了 `useMemo` 也一樣
 
 <br />
 
@@ -89,17 +89,17 @@ id2 --> useMemo
 
 subgraph no-Memo
 	direction TB
-	id31["Parent component re-render"] --> id41["component 產生<br/>一個新的 context object"]
-	id41 --> id51["context 的 reference 變了"]
+	id31["Parent component re-render"] --> id41["component 產生<br/>一個新的 `contextValue` object"]
+	id41 --> id51["`contextValue` object 的 reference 變了"]
 	id51 --> id61["使用該 context <br />的 component re-render"]
 end
 
 subgraph useMemo
 	direction TB
 	id32["Parent component re-render"] --> id42["useMemo 去看看監聽的 state <br/>有沒有在這次 re-render 變動"]
-	id42 --> id52["發現有變動，useMemo 產生<br/>一個新的 context object"]
-	id52 --> id62["useContext 的 component <br />偵測到新的 context object reference"]
-	id62 --> id72["因為 context 的 reference 變了，<br />使用該 context 的 component re-render"]
+	id42 --> id52["發現有變動，useMemo 產生<br/>一個新的 `contextValue` object"]
+	id52 --> id62["useContext 的 component <br />偵測到新的 `contextValue` object reference"]
+	id62 --> id72["因為 `contextValue` 的 reference 變了，<br />使用該 `contextValue` 的 component re-render"]
 end
 ```
 
@@ -108,7 +108,7 @@ end
 改變 context 的某些 state ，卻造成其他沒有用這個 state，但有用到 Conext 的 components 都會 re-render，這不是我們想要的效果，
 從上述的解說，我們也知道原因了，主要就是：
 
-1. **整個 context object 的參考會一直變動，造成所有使用 context 的 component 一直 re-render**
+1. **整個 context object 的參考會一直變動，造成所有使用此 context 的 component 一直 re-render**
 2. **無法偵測特定的 context value 是否有變動，進而去決定是否要 re-render**
 
 <br /><br /><br />
@@ -139,7 +139,7 @@ end
 
 Context
 
-```tsx
+```tsx showLineNumbers
 import React, { useContext } from 'react';
 
 const ReduxContext = createContext(null);
@@ -159,7 +159,7 @@ function useReduxContext() {
 
 Provider
 
-```jsx
+```jsx showLineNumbers
 export function Provider({ store, children }) {
   return (
     <ReduxContext.Provider value={store}>
@@ -176,7 +176,7 @@ export function Provider({ store, children }) {
 
 取得 ReduxContext 裡面的 store，並回傳 `store.dispatch`
 
-```tsx
+```tsx showLineNumbers
 export function useDispatch() {
   const store = useReduxContext();
   return store.dispatch;
@@ -218,7 +218,7 @@ id5 --> id6["5. 將 step 1 ~ step 4 的行為註冊到 redux 裡"]
 
 程式碼如下：
 
-```tsx
+```tsx showLineNumbers
 const defaultEqualityFn = (prevState, curState) => prevState === curState;
 
 export function useSelector(selector, equalityFn = defaultEqualityFn) {
