@@ -1,6 +1,6 @@
 ---
 sidebar_label: '[Implement] 60 行實現 react-redux'
-title: '[Implement] 60 行實現 react-reudx'
+title: '[Implement] 60 行實現 react-redux'
 tags:
   - Implement
   - react-redux
@@ -189,7 +189,7 @@ export function useDispatch() {
 
 ### 實現 `useSelector`
 
-react-reudx 的重頭戲，實現 `useSelector` 過程，主要是利用
+react-redux 的重頭戲，實現 `useSelector` 過程，主要是利用
 1. 從 `useReduxContext` 取得 store，因為 store 是固定的 reference，故不會造成 re-render
 2. 利用 selector 選取 store 中監聽的 state 部分
 3. 利用 `useRef` 記住上次監聽的 state，並用當作是否要 re-render 的基準
