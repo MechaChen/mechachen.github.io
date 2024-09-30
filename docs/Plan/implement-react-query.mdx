@@ -1,0 +1,691 @@
+---
+sidebar_label: '[Implement] 150 行實現 React Query'
+title: '[Implement] 150 行實現 React Query'
+tags:
+  - Implement
+  - react-query
+
+---
+
+:::info 原始碼在這，可以參考 commit 紀錄來看看每個步驟的變化～
+https://github.com/MechaChen/react-query-lite-implementation
+:::
+
+## 前言：為什麼要有 React Query？
+
+在過去我們需要有一些全域的狀態管理庫，像是 Redux 來管理所有的全域狀態，但就會造成一些問題，像是 API 的全域資料跟 UI 的全域資料混再一起，都存在 Redux 中 <br /><br />
+這時，出現了像 React Query 這樣的套件，來把 全域的 API 資料，稱作 Server state，和 UI state 分開來，做到關注點分離 (Seperate of concern)，並對 Server state 做一些背後的處理，像是
+- 快取 (cache)
+- 現顯示陳舊資料，在背後去更新 (stale while revalidate; SWR)
+- 提供一些常用的屬性，像是 `isLoading`, `isError`, `isSuccess`, `isFetching` 等等
+
+<br />
+
+讓我們省去過往很多處理全域 API 資料的功夫
+
+<br /><br />
+
+
+## 實現 React Query API
+
+<br /><br />
+
+### 要實現的功能
+
+如圖片中所示，我們要讓第一隻 API call 的資料被再次訪問時，可以立即看見，並且在一段時間後去背地裡更新資料
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Y_hmOKjx7Oc?si=0dhmxR00vbAQQqDq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<br /><br /><br />
+
+### 要實現的 API
+
+```jsx
+import React from 'react';
+
+export function QueryClientProvider() {}; // 將所有的 api queries data 透過 Context 傳遞下去
+
+export class QueryClient {}; // 儲存有所有的 api queries data
+  
+export function useQuery() {}; // custom hook，讓我們可以取得經過 stale-while-revalidate 的 api data
+```
+
+<br /><br />
+
+### 一些大局觀
+
+1. 我們利用 Proxy pattern 將原本的 API call 另外做 cache 等機制，或 data GC 的處理，在 `createQuery`, `createQueryObserver` functions 可以看見
+2. 我們利用 Observer pattern，讓所有使用同一個 query 的 components 都能監聽到 query 的狀態，在 `createQueryObserver` 中可以看見
+
+<br /><br /><br />
+
+先將 `QueryClientProvider` 傳入新的 Context，ReactQueryDevtools 設為 `null`
+
+```jsx
+const context = React.createContext();
+
+export function QueryClientProvider({ children, client }) {
+	return (
+		<context.Provider value={client}>
+			{children}
+		</context.Provider>
+	);
+};
+
+export function ReactQueryDevtools() {
+	return null;
+};
+```
+
+<br /><br />
+
+### Step 1：設定 `useQuery`, `createQuery` 基本功能和屬性，讓 `useQuery` 可以儲存 api data 和狀態
+
+將 `useQuery` 傳回基本的屬性
+
+```jsx
+export function useQuery() {
+	return {
+		status: 'loading',
+		isLoading: false,
+		data: undefined,
+		error: undefined,
+	}
+}
+```
+
+<br /><br />
+
+
+設定 `createQuery`，產生一個新的 query
+- 有基本的 api data 屬性
+- 將現在 call api 的 function(`queryFn`) 回傳的的 promise 儲存到 `query.promise` 中
+- 如果已經有 promise 在執行，就不要去執行 `queryFn`，回傳既有的 promise
+- `queryFn` 執行完後，更新狀態
+
+
+```jsx
+function createQuery({ queryKey, queryFn }) {
+	let query = {
+		promise: null,
+		state: {
+			status: 'idle',
+			isLoading: false,
+			data: undefined,
+			error: undefined,
+		},
+		setState: (updater) => {
+			query.state = updater(query.state);
+		},
+		fetch: () => {
+			if (!query.promise) {
+				query.promise = (async() => {
+                    // 將狀態改為 loading
+					query.setState((state) => ({
+						...state,
+						isLoading: true
+					}));
+
+					try {
+						const data = await queryFn();
+                        // 成功後，將狀態改為 success
+                        // 並把 api data 儲存到 state 中
+						query.setState((state) => ({
+							...state,
+							status: 'success',
+							data,
+						}))
+					} catch (error) {
+                        // 失敗後，將狀態改為 error
+                        // 並把 error 儲存到 state 中
+						query.setState((state) => {
+							...state,
+							status: 'error',
+							error,
+						})
+					} finally {
+                        // 無論成功或失敗，都將 isLoading 改為 false
+						query.setState((state) => {
+							...state,
+							isLoading: false,
+						})
+					}
+				})();
+			}
+
+			return query.promise;
+		}
+	}
+}
+```
+
+<br /><br />
+
+
+### Step 2：將監聽同個 api query 的 component 加進來
+
+我們提供 `subscribe` function，讓 component 可以訂閱 query 的狀態，並且在狀態改變時，通知所有訂閱者
+
+```jsx 
+function createQuery({ queryKey, queryFn }) {
+	let query = {
+		promise: null,
+        // highlight-start
+		subscribers: [],
+		subscribe: (subscriber) => {
+			query.subscribers.push(subscriber);
+
+			return () => {
+                query.subscribers = query.subscribers
+                    .filter((s) => s !== subscriber)
+            }
+		},
+        // highlight-end
+		setState: (updater) => {
+            query.state = updater(query.state);
+            // highlight-start
+            query.subscribers.forEach((subscriber) => subscriber.notify());
+            // highlight-end
+        },
+        ...
+	}
+}
+```
+
+
+<br /><br />
+
+
+### Step 3：將所有的 Queries 集中在同一個地方，並且可以透過 `queryKey` 找到對應的 api query
+<br />
+
+```jsx
+// 需要一個地放 queries，這時候就需要 QueryClient
+export class QueryClient {
+	constructor() {
+		this.queries = [];
+	}
+
+    // 取得特定的 query
+	getQuery = (options) => {
+        // 1. 利用 queryKey 找到對應的 query
+		const queryHash = JSON.stringify(options.queryKey);
+		let query = this.queries.find((query) => query.queryHash);
+
+        // 2. 如果沒有，就建立一個新的 query
+		if (!query) {
+			query = createQuery(this, options);
+			this.queries.push(query);
+		}
+
+		return query;
+	}
+}
+
+function creatQuery(client, { queryKey, queryFn }) {
+	let query = {
+        // highlight-start
+		queryKey,
+		queryHash: JSON.stringify(queryKey),
+        // highlight-end
+		promise: null,
+        subscribers: [],
+        state: {
+            status: 'loading',
+            isLoading: true,
+            data: undefined,
+            error: undefined,
+        },
+        ...
+	}
+}
+```
+
+<br /><br /><br />
+
+### Step 4：實現 `useQuery`，讓 component 可以監聽 api query 的狀態
+
+```jsx
+export function useQuery({ queryKey, queryFn }) {
+	const client = useContext(context);
+
+	const [, forceRerender] = useReducer((state) => state + 1, 0);
+
+	const observerRef = useRef(null);
+
+	if (!observerRef.current) {
+		observerRef.current = createQueryObserver(
+			client, 
+			{ queryKey, queryFn }
+		);
+	}
+
+	useEffect(() => {
+		return observerRef.current.subscribe(forceRerender);
+	}, [])
+
+	return observerRef.current.getResult();
+}
+
+
+// 將 observer 要做的事另外用一個 object 來封裝
+
+function createQueryObserver(client, { queryKey, queryFn }) {
+	const query = client.getQuery({ queryKey, queryFn });
+
+	const observer = {
+		notify: () => {},
+		getResult: () => query.state,
+		subscribe: (callback) => {
+			observer.notify = callback;
+			const unsubscribe = query.subscribe(observer);
+
+			query.fetch();
+
+			return unsubscribe;
+		}
+	}
+
+	return observer;
+}
+```
+
+<br /><br />
+
+到這邊我們 React Query 的基本功能就完成了 🥳🥳🥳，但我們還可以加上一些客製化的功能，像是 `staleTime`, `gcTimeout` 等等
+
+<br /><br />
+
+### (Extra) Step 5 : 加入 `staleTime`
+
+`staleTime`：現在的 api 資料要保存多久
+
+
+1. 把上次成功取得 api 的最後的時間加到 query state 裡
+2. 將舊資料要保留 `staleTime` 的時間傳到 `useQuery` 裡
+3. 在 `createObserver` 中，確認現在的時間與上次跟新的時間相減，有沒有超過要保留的時間，如果有，重新 fetch
+
+```jsx
+export createQuery(client, { queryKey, queryFn }) {
+	let query = {
+		queryKey,
+        queryHash: JSON.stringify(queryKey),
+        promise: null,
+        subscribers: [],
+        state: {
+            status: 'loading',
+            isFetching: true,
+            data: undefined,
+            error: undefined,
+        },
+        ...,
+		fetch: () => {
+			if (!query.promise) {
+				query.promise = (async () => {
+					query.setState((state) => ({
+                        ...state,
+                        isFetching: true,
+                        error: undefined,
+                    }));
+
+					try {
+						const data = await queryFn();
+						query.setState((state) => ({
+							...state,
+							status: 'success',
+							data,
+                            // highlight-start
+							lastUpdated: Date.now(),
+                            // highlight-end
+						}))
+					} catch (error) {
+						query.setState((state) => {
+							...state,
+							status: 'error',
+							error,
+						})
+					} finally {
+						query.setState((state) => {
+							...state,
+							isLoading: false,
+						})
+					}
+				})();
+			}
+
+			return query.promise;
+		}
+	}
+
+	return promise
+}
+
+
+export function useQuery({
+    queryKye,
+    queryFn,
+    // highlight-start
+    staleTime,
+    // highlight-end
+}) {
+	const client = useContext(context);
+
+    const [, forceRender] = useReducer((state) => state + 1, 0);
+
+    const observerRef = useRef(null);
+
+	if (!observerRef.current) {
+		observerRef.current = createQueryObserver(
+			client,
+			{
+                queryKey,
+                queryFn,
+                // highlight-start
+                staleTime,
+                // highlight-end
+            }
+		);
+	}
+    
+	useEffect(() => {
+        return observerRef.current.subscribe(forceRender);
+    }, []);
+
+    return observerRef.current.getResult();
+}
+		
+function createQueryObserver(
+    client,
+    { 
+        queryKey, 
+        queryFn, 
+        // highlight-start
+        staleTime,
+        // highlight-end
+    }
+) {
+	const query = client.getQuery({ queryKey, queryFn });
+
+	const observer = {
+		notify: () => {},
+        getResult: () => query.state,
+		subscribe: (callback) => {
+			observer.notify = callback;
+			const unsubscribe = query.subscribe(observe);
+
+            // 在呼叫 useQuery 的時候，執行有特定條件的 fetch
+            // highlight-start
+			observer.fetch();
+            // highlight-end
+
+			return unsubscribe;
+		},
+		fetch: () => {
+            // highlight-start
+			const isNotFetchBefore = !query.state.lastUpdated;
+			const isStillFresh = (Date.now() - query.state.lastUpdated) > staleTime;
+			
+			if (isNotFetchBefore || isStillFresh) {
+				query.fetch();
+			}
+            // highlight-end
+		}
+	}
+	
+    return observer;
+}
+```
+
+<br /><br />
+
+
+### (Extra) Step 6：加入 `gcTimeout`
+
+`gcTimeout`：在指定的一段時間後，將此 api data 移除掉，就算沒有在重新 fetch
+
+1. 在 `useQuery`, `createQueryObserve` 將使用者指定的 `cacheTime` 傳入
+2. 在 `createQuery` 中，在註冊時，當至少有一個 component 註冊該 query 時，就不要將此 query 回收掉，但沒有註冊者就會收掉
+
+```jsx
+function createQuery(
+    client,
+    { 
+        queryKey,
+        queryFn,
+        // highlight-start
+        cacheTime = 5 * 60 * 1000
+        // highlight-end
+    }
+) {
+	let query = {
+		queryKey,
+        queryHash: JSON.stringify(queryKey),
+        promise: null,
+        subscribers: [],
+        // highlight-start
+		gcTimeout: null,
+        // highlight-end
+		state: {
+            status: 'loading',
+            isFetching: true,
+            data: undefined,
+            error: undefined,
+        },
+		subscribe: (subscriber) => {
+			query.subscribers.push(subscriber);
+
+            // highlight-start
+			query.unscheduleGC();
+            // highlight-end
+
+			return () => {
+				query.subscribers = query.subscribers.filter((s) => s !== subscriber);
+
+                // highlight-start
+                // 當此 query 沒有訂閱者時，就可以 Garbage Collection
+				if (!query.subscribers.length) {
+					query.scheduleGC();
+				}
+                // highlight-end
+			}
+		},
+        // highlight-start
+		scheduleGC: () => {
+			query.gcTimeout = setTimeout(() => {
+				clients.queries = client.queries.filter((q) => q !== query)
+			}, cacheTime);
+		},
+		unscheduleGC: () => {
+			clearTimeout(query.gcTimeout);
+		},
+        // highlight-end
+        ...
+	}
+}
+
+
+export function useQuery({ ..., cacheTime }) {
+	...
+	if (!observerRef.current) {
+		observerRef.current = createQueryObserver(
+			client,
+			{ queryKey, queryFn, staleTime, cacheTime },
+		)
+	}
+	
+	...
+}
+
+function createQueryObserver(client, { ..., cacheTime }) {
+	const query = client.getQuery({ queryKey, queryFn, cacheTime });
+	...
+}
+```
+
+<br /><br />
+
+## 最終程式碼
+
+```jsx showLineNumbers
+import React, { useContext, useRef, useReducer, useEffect } from 'react';
+
+const context = React.createContext();
+
+export function QueryClientProvider({ children, client }) {
+    return <context.Provider value={client}>{children}</context.Provider>;
+};
+
+// 需要一個地放 queries，這時候就需要 QueryClient
+export class QueryClient {
+    constructor() {
+        this.queries = [];
+    }
+
+    // 取得特定的 query
+    getQuery = (options) => {
+        // 1. 利用 queryKey 找到對應的 query
+        const queryHash = JSON.stringify(options.queryKey);
+        let query = this.queries.find((query) => query.queryHash === queryHash);
+
+        // 2. 如果沒有，就建立一個新的 query
+        if (!query) {
+            query = createQuery(this, options);
+            this.queries.push(query);
+        }
+
+        return query;
+    }
+};
+
+function createQuery(client, { queryKey, queryFn, cacheTime = 5 * 60 * 1000 }) {
+    let query = {
+        queryKey,
+        queryHash: JSON.stringify(queryKey),
+        promise: null,
+        subscribers: [],
+        gcTimeout: null,
+        state: {
+            status: 'loading',
+            isFetching: true,
+            data: undefined,
+            error: undefined,
+            // 避免重複觸發 (deduppling)，如果有 queryFn 正在執行，就不要再執行一次
+        },
+        subscribe: (subscriber) => {
+            query.subscribers.push(subscriber);
+
+            query.unscheduleGC();
+
+            return () => {
+                query.subscribers = query.subscribers.filter((s) => s !== subscriber);
+
+                // 當此 query 沒有訂閱者時，就可以 Garbage Collection
+                if (!query.subscribers.length) {
+                    query.scheduleGC();
+                }
+            }
+        },
+        scheduleGC: () => {
+            query.gcTimeout = setTimeout(() => {
+                client.queries = client.queries.filter((q) => q !== query);
+            }, cacheTime);
+        },
+        unscheduleGC: () => {
+            clearTimeout(query.gcTimeout);
+        },
+        setState: (updater) => {
+            // updater 類似 reducer，用來改變 state
+            query.state = updater(query.state);
+            query.subscribers.forEach((subscriber) => subscriber.notify());
+        },
+        fetch: () => {
+            if (!query.promise) {
+                query.promise = (async () => {
+                    query.setState((state) => ({ ...state, isFetching: true, error: undefined }));
+    
+                    try {
+                        const data = await queryFn();
+                        query.setState((state) => ({ ...state, status: 'success', data, lastUpdated: Date.now() }));
+                    } catch (error) {
+                        query.setState((state) => ({ ...state, status: 'error', error }));
+                    } finally {
+                        query.promise = null;
+                        query.setState((state) => ({ ...state, isFetching: false }));
+                    }
+                })()
+            }
+
+            return query.promise;
+        },
+    }
+
+    return query;
+}
+
+
+export function useQuery({ queryKey, queryFn, staleTime, cacheTime }) {
+    const client = useContext(context);
+
+    const [, forceRender] = useReducer((state) => state + 1, 0);
+
+    const observerRef = useRef(null);
+
+    if (!observerRef.current) {
+        observerRef.current = createQueryObserver(client, {
+            queryKey,
+            queryFn,
+            staleTime,
+            cacheTime,
+        });
+    }
+
+    useEffect(() => {
+        return observerRef.current.subscribe(forceRender);
+    }, []);
+
+    return observerRef.current.getResult();
+};
+
+// 跟 useQuery 結合
+function createQueryObserver(client, { queryKey, queryFn, staleTime = 0, cacheTime }) {
+    const query = client.getQuery({ queryKey, queryFn, cacheTime });
+
+    const observer = {
+        notify: () => {},
+        getResult: () => query.state,
+        // 在呼叫 useQuery 的時候，就會執行這個函式
+        subscribe: (callback) => {
+            observer.notify = callback;
+            const unsubscribe = query.subscribe(observer);
+
+            // 在呼叫 useQuery 的時候，執行有特定條件的 fetch
+            observer.fetch();
+
+            return unsubscribe;
+        },
+        // fetch 前先檢查保留舊資料的時間 staleTime 是否過期，過期再去 fetch
+        fetch: () => {
+            if (
+                !query.state.lastUpdated
+                || Date.now() - query.state.lastUpdated > staleTime
+            ) {
+                query.fetch();
+            }
+        }
+    }
+
+    return observer;
+}
+
+export function ReactQueryDevtools() {
+    return null;
+};
+```
+
+<br /><br /><br />
+
+### 參考資源
+
+- [Let's Build React Query in 150 Lines of Code! – Tanner Linsley, React Summit Remote Edition 2021 (youtube.com)](https://www.youtube.com/watch?v=9SrIirrnwk0)
+
+<br /><br /><br />

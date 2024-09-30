@@ -1,0 +1,747 @@
+---
+sidebar_label: '[Implement] 50 行實現 React `useState`, `useEffect`'
+title: '[Implement] 50 行實現 React `useState`, `useEffect`'
+tags:
+  - Implement
+  - React
+
+---
+
+<br />
+
+## 實作前，先來了解 `Closures` 的概念
+
+<br />
+
+在實現 `useState` 之前，我們需要先了解 `Closures` 的概念，因為有了 `Closures` 的概念，我們才能在 function 中有 state 的概念
+
+對於 `Closures` 的定義，最清楚且簡單的解釋為 W3Schools：
+
+:::caution W3Schools
+Closure makes it possible for a function to have **"private" variables**.
+:::
+
+
+<br />
+<br />
+
+
+其他解釋為：
+
+:::note MDN
+A closure is the combination of a function and the lexical environment within which that function was declared
+:::
+
+:::note You Don't Know JS
+Closure is when a function is able to remember and access its lexical scope even when that function is executing outside its lexical scope.
+:::
+
+:::note FreeCodeCamp
+A closure is a feature in Javascript where an inner function has access to the outer (enclosing) function's variables - a scope chain."
+:::
+
+
+<br />
+<br />
+
+
+## 如何讓 function 有 state
+
+了解 `Closures` 的概念後，我們可以來看下如何讓 function 有 state 的，後續我們才會知道 `useState` 的實作原理
+
+例如有一個 function `add`，我們希望它能夠記住 `foo` 的值，並且每次呼叫 `add` 時，都能夠得到不同的 `foo` 值
+
+```js
+let foo = 1;
+
+function add() {
+	foo = foo + 1;
+	return foo;
+}
+
+console.log(add()); // 2
+console.log(add()); // 3
+console.log(add()); // 4
+console.log(add()); // 5
+console.log(add()); // 6
+```
+
+<br />
+<br />
+
+如果我們在中間去更改 `foo` 的值，就會讓 app 被毀壞：
+
+```js
+let foo = 1;
+
+function add() {
+	foo = foo + 1
+	return foo;
+}
+
+console.log(add()); // 2
+console.log(add()); // 3
+console.log(add()); // 4
+foo = 999;
+console.log(add()); // 10000
+console.log(add()); // 10001
+```
+
+<br />
+<br />
+
+
+我們希望每個 function 都有自己獨立的 `foo` 變數，所以我們必須保護 `foo` 變數，讓其不要被 global scope 污染，要怎麼做呢？
+
+<br />
+<br />
+
+### 作法 1：將 `foo` 直接移進 `add` function
+
+但這種作法每次都只會回傳相同的結果
+```js
+function add() {
+	let foo = 1;
+	foo = foo + 1
+	return foo;
+}
+
+console.log(add()); // 2
+console.log(add()); // 2
+console.log(add()); // 2
+// foo = 999; // will cause error
+console.log(add()); // 2
+console.log(add()); // 2
+```
+
+<br />
+<br />
+
+### 作法 2：將 function return 一個 add function
+
+這種作法可以讓每個 function 都有自己獨立且永久存在的 `foo` 變數，不會被 global scope 污染，且可以利用 function 提供的 setter 操作
+
+這其實就是 `Closure` 的概念，裡面的 function 可以存取到外面 function 的變數，即使外面 function 已經執行完畢，我們利用這個概念讓每個 function 都有自己的 private states
+
+```js
+function getAdd() {
+	let foo = 1;
+	return function() {
+		foo = foo + 1
+		return foo;
+	}
+}
+
+const add = getAdd();
+
+console.log(add()); // 2
+console.log(add()); // 3
+console.log(add()); // 4
+// foo = 23 // error
+console.log(add()); // 5
+console.log(add()); // 6
+```
+
+<br />
+<br />
+
+
+
+## 實作 `useState`
+
+### 單一 state
+
+我們先試著實作整個 app 只有單一 state 的狀況，我們依照 React 官網的格式嘗試建立 `useState`，如下程式碼
+
+但解構出來的 `setState` 真的去改變值時，只有改變內部的 `_val` 值，外部的變數 `count` 已經被 assign 了，所以會一直是 1，沒有改變，但這跟我們要的 `useState` 概念不一樣
+
+```js
+function useState(initVal) {
+	let _val = initVal;
+	const state = _val;
+	
+	const setState = (newVal) => {
+		_val = newVal;
+	}
+
+	return [state, setState]
+}
+
+const [count, setCount] = useState(1);
+console.log(count) // 1
+
+setCount(2);
+console.log(count) // 1
+```
+
+<br />
+<br />
+
+
+我們可以用一個非常簡單的方式來解決，就是將 state 變成一個 return `_val` 的 function
+(這是不是就是 [SolidJS 的 signal](https://www.solidjs.com/tutorial/introduction_signals)？？？)
+
+```js
+function useState(initVal) {
+	let _val = initVal;
+	const state = () => _val;
+	
+	const setState = (newVal) => {
+		_val = newVal;
+	}
+
+	return [state, setState]
+}
+
+const [count, setCount] = useState(1);
+console.log(count()) // 1
+
+setCount(2);
+console.log(count()) // 2
+```
+
+<br />
+<br />
+
+
+可是我們在使用 React 時，並沒有使用 `state()` 的方式來取得狀態，
+因此，我們需要用另一種方法來模擬
+
+<br />
+<br />
+
+#### React module
+
+我們可以先將 `useState` 搬到 const `React` 這個 module 裡，慢慢解決這個問題
+
+```jsx
+const React = (function() {
+	function useState(initVal) {
+		let _val = initVal;
+		const state = _val;
+		
+		const setState = (newVal) => {
+			_val = newVal;
+		}
+		return [state, setState]
+	}
+
+	return { useState }
+})();
+```
+
+<br />
+<br />
+
+
+
+#### Component
+
+我們也同時撰寫一個 Component & `React.render` function，來實現 setState & rerender 後，拿到最新的 state 值的狀況
+
+我們可以利用 Component 重新去 render，每次都會拿到最新的 `_val` 值，因為每次 render 時，Component 都會去拿到最新的 `useState` 和 `_val` 值，進而拿到最新的 `state`
+
+我們呼叫 React.render 時，都會呼叫一個新的 Component function，這時候，就會透過 `React.useState` 從 React 中去拿 `_val` 的值，
+assign 給當下 component function，作為一個全新的 `count` 變數，這時候就會拿到 React 最新的 `_val` 值
+
+```jsx
+const React = (function() {
+	let _val;
+	
+	function useState(initVal) {
+		const state = _val;
+		
+		const setState = (newVal) => {
+			_val = newVal;
+		}
+		return [state, setState]
+	}
+	
+    // highlight-start
+	function render(Component) {
+		const C = Component();
+		C.render();
+		return C;
+	}
+    // highlight-end
+
+	return { useState, render }
+})();
+
+
+function Component() {
+	const [count, setCount] = React.useState(1);
+	return {
+		render: () => console.log(count),
+		click: () => setCount(count + 1)
+	}
+}
+
+var App = React.render(Component); // 1
+
+App.click();
+var App = React.render(Component); // 2
+
+App.click();
+var App = React.render(Component); // 3
+
+App.click();
+var App = React.render(Component); // 4
+
+App.click();
+var App = React.render(Component); // 5
+```
+
+
+<br />
+<br />
+
+### 多個 states
+
+當我們有 2nd state 時，當我們在執行任一個 `setState` 時，就會發生以下問題：
+- `count`, `text` 的值變成一樣了
+
+<br />
+
+這是因為我們只有一個 `_val` 在掌管所有 `useState` 可以取得的狀態，我們目前沒辦法把所有的 `useState` 的狀態給分開，導致所有 `useState` 共用狀態，才產生這個問題
+
+```js
+function Component() {
+	const [count, setCount] = React.useState(1);
+	const [text, setText] = React.useState('apple');
+
+	return {
+		render: () => console.log({ count, text }),
+		click: () => setCount(count + 1),
+		type: (word) => setText(word)
+	}
+}
+
+var App = React.render(Component);
+// { count: 1, text: 'apple' }
+
+App.click();
+var App = React.render(Component);
+// { count: 2, text: 2 }
+
+App.type('pear');
+var App = React.render(Component);
+// { count: 'pear', text: 'pear' }
+
+```
+
+<br />
+<br />
+
+#### 1st. 將所有的 React states存成一個 array
+
+因此，我們需要將所有的狀態存成一個 array，記住每個 `useState` 的狀態
+
+```js
+const React = (function() {
+    // highlight-start
+	let hooks = [];
+	let idx = 0;
+    // highlight-end
+
+	function useState(initVal) {
+        // highlight-start
+		const state = hooks[idx] || initVal;
+		const setState = (newVal) => {
+			hooks[idx] = newVal;
+		}
+		
+		idx += 1;
+        // highlight-end
+		return [state, setState];
+	}
+
+	function render(Component) {
+		const C = Component();
+		C.render();
+		return C;
+	}
+
+	return { useState, render };
+})
+```
+
+<br />
+<br />
+
+但還是會產生以下結果
+
+
+```js
+var App = React.render(Component);
+
+App.click();
+var App = React.render(Component);
+
+App.type('pear');
+var App = React.render(Component);
+
+// { count: 1, text: 'apple' }
+// { count: 2, text: 'apple' }
+// { count: 'pear', text: 'apple' }
+```
+
+<br />
+
+這是因為：
+
+```js
+var App = React.render(Component);
+// hooks: [], 呼叫 2 次 useState，讓 idx === 2
+// { count: 1, text: 'apple' }
+
+App.click();
+// setCount(count + 1) --> 將 count + 1 的值設在 hooks[2]
+
+
+var App = React.render(Component);
+// hooks: [ <2 empty items, 2]，呼叫 2 次 useState,讓 idx === 4
+// { count: 2, text: 'apple' }
+
+
+App.type('pear');
+// setText('pear') --> 將 'pear' 的值設在 hooks[4]
+
+
+var App = React.render(Component);
+// hooks: [ <2 empty items>, 2, <1 empty item>, 'pear' ]
+// current idx === 4
+// count === hooks[4] === 'pear'
+// text === hooks[5] || initVal, hooks[5] 為空，所以 text === initVal === 'apple'
+// { count: 'pear', text: 'apple' }
+```
+
+<br />
+<br />
+
+
+#### 2nd.  `render` 時 reset `idx` 為 0
+因為上述 `idx` 會在每次 React.render 後，根據 `useState` 的呼叫次數一直增加，導致我們對應不到正確的 hooks `idx` 值
+
+所以我們在 render 時，把 idx 重設，試圖來解決這個問題
+
+```jsx
+const React = (function() {
+
+	let hooks = [];
+	let idx = 0;
+
+	function useState(initVal) {
+		const state = hooks[idx] || initVal;
+		const setState = (newVal) => {
+			hooks[idx] = newVal;
+		}
+		idx += 1;
+		return [state, setState];
+	}
+
+	function render(Component) {
+        // highlight-start
+		idx = 0;
+		// highlight-end
+		const C = Component();
+		C.render();
+		return C;
+	}
+
+	return { useState, render }
+
+})();
+```
+
+<br />
+<br />
+
+但卻還是造成以下結果
+
+```js
+var App = React.render(Component);
+
+App.click();
+var App = React.render(Component);
+
+App.type('pear');
+var App = React.render(Component);
+
+// { count: 1, text: 'apple' }
+// { count: 1, text: 'apple' }
+// { count: 1, text: 'apple' }
+
+```
+
+<br />
+
+這是因為：
+
+```jsx
+var App = React.render(Component);
+// hooks: [], 呼叫 2 次 useState，讓 idx === 2
+// { count: 1, text: 'apple' }
+
+App.click();
+// setCount(count + 1) --> 將 count + 1 的值設在 hooks[2]
+
+
+var App = React.render(Component);
+// idx 被設為 0
+// hooks: [ <2 empty items, 2]，呼叫 2 次 useState,讓 idx === 2
+// { count: 1, text: 'apple' }
+
+
+App.type('pear');
+// setText('pear') --> 將 'pear' 的值設在 hooks[2]
+
+
+var App = React.render(Component);
+// idx 被設為 0
+// hooks: [ <2 empty items>, 'pear' ], 呼叫 2 次 useState，讓 idx === 2
+// { count: 1, text: 'apple' }
+```
+
+<br />
+<br />
+
+
+#### 3rd. 將現在的 idx 記在 `useState` 中
+
+我們在 `useState` 被呼叫時，將當下 React 的 `idx` 傳進到 `useState` 裡，
+也是再次使用到 Closure 的概念，這樣 `setState` 就會設定到 hooks 正確的 idx 中了
+
+```jsx
+const React = (function() {
+
+	let hooks = [];
+	let idx = 0;
+
+	function useState(initVal) {
+		const state = hooks[idx] || initVal;
+		
+		// highlight-start
+		const _idx = idx;
+		const setState = (newVal) => {
+			hooks[idx] = newVal;
+		}
+		// highlight-end
+		idx += 1;
+		return [state, setState];
+	}
+
+	function render(Component) {
+		idx = 0;
+		const C = Component();
+		C.render();
+		return C;
+	}
+
+	return { useState, render }
+
+})();
+```
+
+<br />
+<br />
+
+
+結果就會如我們預期的一樣
+
+```jsx
+var App = React.render(Component);
+// { count: 1, text: 'apple' }
+
+App.click();
+var App = React.render(Component);
+// { count: 2, text: 'apple' }
+
+
+App.type('pear');
+var App = React.render(Component);
+// { count: 2, text: 'pear' }
+```
+
+<br />
+<br />
+
+
+
+## Hooks rules
+
+React 有一條規則是：我們不能將 `useState` 包在 condition 中，
+因為這樣 React 內部的 `idx` 就會看狀況 + 1，就不會將 hooks 的值正確的 mapping 到 Component 的 `useState` 中了
+
+
+<br />
+<br />
+
+
+## `useEffect`
+
+成功實現 `useState` 後，我們就可以來實現 `useEffect` 了解
+
+我們的需求如下：
+- 如果沒有 dependency，我們希望在只一開始，印出 `useEffect by Benson`
+- 如果有 dependency，我們希望在 一開始和 dependency (e.g.`text`) 改變時，印出 `useEffect by Benson`
+
+```js
+function Component() {
+    const [count, setCount] = React.useState(1);
+    const [text, setText] = React.useState('apple');
+
+    // highlight-start
+    React.useEffect(() => {
+        console.log('useEfect by Benson');
+    }, [text]);
+    // highlight-end
+
+    return {
+        render: () => console.log({ count, text }),
+        click: () => setCount(count + 1),
+        type: (text) => setText(text)
+    }
+}
+```
+
+<br />
+<br />
+
+
+`useEffect` 的實作如下：
+1. 取得舊的 dependencies
+2. 如果 dependencies 有改變，就執行 callback
+3. 將新的 dependencies 存回 hooks
+4. 將 idx 往後移
+
+<br />
+
+在一開始，因為 `oldDeps` 不存在 `hooks` 中，所以一開始會執行 callback，但後續 re-render 時，`oldDeps` 就會存在 `hooks` 中，所以會去檢查 dependencies 是否有改變，如果沒有改變就不會執行 callback
+
+```js
+const React = (function() {
+    let hooks = [];
+    let idx = 0;
+
+    function useState(initVal) {
+        const state = hooks[idx] || initVal;
+        const _idx = idx;
+        const setState = (newVal) => {
+            hooks[_idx] = newVal;
+        }
+        
+        idx += 1;
+
+        return [state, setState];
+    }
+
+    // highlight-start
+    function useEffect(cb, depArray) {
+        // NOTE: get old dependecies by idx
+        const oldDeps = hooks[idx];
+
+        // NOTE: by default, cb should be called every time
+        let hasChanged = true;
+
+        // NOTE: if there exists one value in new dependencies not equal to old dependencies
+        if (oldDeps) {
+            hasChanged = depArray.some(
+                (dep, i) => !Object.is(dep, oldDeps[i])
+            )
+        }
+
+        if (hasChanged) {
+            cb();
+        }
+
+        // should call cb
+        // NOTE: store the new dependencies to hooks, and continue to next hook
+        hooks[idx] = depArray;
+        idx += 1
+    }
+    // highlight-end
+
+    function render(Component) {
+        idx = 0;
+        const C = Component();
+        C.render();
+        return C;
+    }
+
+    return { useState, useEffect, render }
+})();
+```
+
+<br />
+<br />
+
+
+我們執行後，就可以看到結果如下：
+
+```js
+var App = React.render(Component);
+// log: { count: 1, text: 'apple' }
+// log: 'useEffect by Benson'
+
+App.click();
+var App = React.render(Component);
+// log: { count: 2, text: 'apple' }
+
+App.type('pear');
+var App = React.render(Component);
+// log: { count: 2, text: 'pear' }
+// log: 'useEffect by Benson'
+
+```
+
+<br />
+<br />
+
+成功的在一開始，還有 `text` dependency 改變時，執行 `useEffect` 的 callback
+
+<br />
+<br />
+
+
+:::info `useState` 和 `useEffect` 實際搭配 JSX
+因為後續在影片中，這段沒有特別清楚，就交給有緣人去研究了 😂
+:::
+
+
+
+<br />
+<br />
+<br />
+
+
+
+
+
+## 結論
+1. React hooks 的核心原理，就是用 `Closure` 的概念記住每個 hook 的狀態
+2. 利用 `render` 的機會，將 `idx` 歸零，並在每次讀到一個 hook 時 += 1，讓每次 `useState`, `useEffect` 都能正確 mapping 到 hooks 的正確值
+
+
+
+<br />
+<br />
+<br />
+
+
+
+
+### 參考資料
+- [Can Swyx recreate React Hooks and useState in under 30 min? - JSConf.Asia (youtube.com)](https://www.youtube.com/watch?v=KJP1E-Y-xyo)
+
+
+
+
+
+<br />
+<br />
+<br />
+
+
+
+
