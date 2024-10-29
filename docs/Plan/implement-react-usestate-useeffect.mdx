@@ -1,11 +1,15 @@
 ---
-sidebar_label: '[Implement] 50 行實現 React `useState`, `useEffect`'
-title: '[Implement] 50 行實現 React `useState`, `useEffect`'
+sidebar_label: '[Implement] 40 行實現 React `useState`, `useEffect`'
+title: '[Implement] 40 行實現 React `useState`, `useEffect`'
 tags:
   - Implement
   - React
 
 ---
+
+:::info 原始碼在這，歡迎參考～
+https://github.com/MechaChen/useState-and-useEffect-lite
+:::
 
 <br />
 
@@ -716,6 +720,94 @@ var App = React.render(Component);
 
 
 
+## 最終原始碼
+
+### React 簡易 `useState` 和 `useEffect` 原始碼
+
+```js showLineNumbers
+const React = (function() {
+	let hooks = [];
+	let idx = 0;
+
+	function useState(initVal) {
+		const state = hooks[idx] || initVal;
+		const _idx = idx;
+		const setState = (newVal) => {
+			hooks[_idx] = newVal;
+		}
+		idx += 1;
+		return [state, setState];
+	}
+
+	function useEffect(cb, depArray) {
+		const oldDeps = hooks[idx];
+		let hasChanged = true;
+
+		if (oldDeps) {
+			hasChanged = depArray.some(
+				(dep, i) => !Object.is(dep, oldDeps[i])
+			)
+		}
+
+		if (hasChanged) {
+			cb();
+		}
+
+		hooks[idx] = depArray;
+		idx += 1
+	}
+
+	function render(Component) {
+		idx = 0;
+		const C = Component();
+		C.render();
+		return C;
+	}
+
+	return { useState, useEffect, render }
+})();
+```
+
+<br />
+<br />
+
+### 測試原始碼
+```js
+function Component() {
+    const [count, setCount] = React.useState(1);
+    const [text, setText] = React.useState('apple');
+
+    React.useEffect(() => {
+        console.log('useEfect by Benson');
+    }, [text]);
+
+    return {
+        render: () => console.log({ count, text }),
+        click: () => setCount(count + 1),
+        type: (text) => setText(text)
+    }
+}
+
+
+var App = React.render(Component); 
+
+App.click(); 
+var App = React.render(Component);
+
+App.type('pear');	
+var App = React.render(Component);
+
+// { count: 1, text: 'apple' }
+// 'useEffect by Benson'
+// { count: 2, text: 'apple' }
+// { count: 2, text: 'pear' }
+// 'useEffect by Benson'
+```
+
+
+<br />
+<br />
+<br />
 
 
 ## 結論

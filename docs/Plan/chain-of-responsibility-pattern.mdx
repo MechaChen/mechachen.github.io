@@ -1,0 +1,647 @@
+---
+sidebar_label: '[Design Pattern] Chain of Responsibility pattern'
+title: '[Design Pattern] Chain of Responsibility pattern'
+tags:
+  - Design Pattern
+
+---
+
+
+## 為什麼需要責任鏈模式？
+
+<br />
+
+> <p>🥲 常有新需求需要去更改處理事情的順序</p> 
+> <p>✅ 我們可以依照需求很彈性的去更改 handlers 的順序 </p>
+
+<br />
+
+> <p>🥲 常有新需求需要改到舊有的程式碼邏輯，造成原本處理的邏輯越來越大包和複雜，難以維護</p>
+> ✅ <b>單一職責原則 (Single Responsibility Principle)</b>： <br />
+> 當有新需求時，不會去動到觸發整條鏈的 Class / Object / Function，而是實際執行每項細節的 Class / Object / Function
+
+<br />
+
+> <p>🥲 常有新需求需要改到舊有的程式碼邏輯，造成原本處理的邏輯越來越大包和複雜，難以維護</p>
+> ✅ <b>開放封閉原則 (Open/Closed Principle)</b>： <br />
+> 我們可以輕鬆地加入新的 handler，而不需要改到舊有 Class / Object / Function
+
+ 
+<br /><br />
+
+
+## 什麼是責任鏈模式？
+ 
+
+<img src="/img/chain-of-responsibility-illustration.png" alt="chain-of-responsibility" />
+
+<br />
+
+> <b>Chain of Responsibility</b> is a behavioral design pattern that lets you pass requests along a chain of handlers. Upon receiving a request, each handler decides either to process the request or to pass it to the next handler in the chain
+
+<br />
+
+將需求傳送到一串的處理程序，每個程序可以決定是否要處理或傳到下一個鏈中的處理程序
+
+ 
+
+<br /><br />
+
+
+### 現實中的情境
+ 
+
+<img src="/img/chain-of-responsibility-in-reality.png" alt="chain-of-responsibility-in-reality" />
+ 
+
+你剛買並安裝了一個新的硬體在你的電腦上。由於你是個極客，電腦上安裝了好幾個操作系統。你試圖啟動所有的操作系統以查看硬體是否被支持。Windows 自動檢測並啟用硬體。然而，你心愛的 Linux 拒絕與新硬體配合工作。懷著一絲希望，你決定撥打盒子上寫的技術支援電話號碼 <br /><br />
+
+你首先聽到的是<b><u>自動應答機器人的聲音</u></b>。它提出了九個針對各種問題的熱門解決方案，但都與你的情況無關。過了一會兒，機器人將你轉接到一個真人客服 <br /><br />
+
+然而，客服也無法提出具體的建議。他不停地引用手冊中的長篇段落，拒絕聽取你的意見。當你第十次聽到 “你試過把電腦關掉再開機嗎？” 這句話時，你要求<b><u>轉接到一個真正的工程師</u></b> <br /><br />
+
+最終，客服將你的電話轉接給了一位工程師，他大概在辦公樓的陰暗地下室裡的孤獨伺服器房裡渴望著與人聊天已久。這位工程師告訴你到哪裡下載合適的驅動程式以及如何在 Linux 上安裝它們。終於，問題解決了！你結束了通話，心中充滿喜悅
+
+ 
+<br /><br />
+ 
+
+### 開發中的情境
+ 
+<img src="/img/chain-of-responsibility-in-development.png" alt="chain-of-responsibility-in-development" />
+
+想象一下，你正在開發一個線上訂購系統。你希望限制只有已驗證的用戶才能創建訂單。此外，擁有管理權限的用戶必須能夠完全訪問所有訂單。
+
+經過一番規劃後，你意識到這些檢查必須依次進行。應用程序可以在接收到包含用戶憑證的請求時嘗試對用戶進行系統驗證。然而，如果那些憑證不正確且驗證失敗，那麼就沒有理由進行任何其他檢查
+
+ 
+<br /><br />
+ 
+<img src="/img/chain-of-responsibility-in-development-2.png" alt="chain-of-responsibility-in-development-2" />
+
+在接下來的幾個月裡，你實施了更多這些順序檢查。
+
+你的其中一位同事建議，直接將原始數據傳遞到訂購系統是不安全的。因此，你添加了一個額外的驗證步驟來清理請求中的數據。
+
+後來，有人注意到系統容易受到暴力破解密碼攻擊。為了解決這個問題，你迅速添加了一個檢查，過濾來自同一 IP 地址的多次失敗請求。
+
+另一位同事建議，對於包含相同數據的重複請求，可以通過返回緩存的結果來加快系統速度。因此，你添加了另一個檢查，只有在沒有合適的緩存響應時，請求才會通過到系統
+
+ 
+
+<br /><br />
+
+這些檢查的代碼，原本就已經顯得凌亂，隨著你添加每一個新功能，變得越來越臃腫。改變一個檢查有時會影響到其他檢查。最糟糕的是，當你嘗試重用這些檢查來保護系統的其他組件時，你不得不重複一些代碼，因為那些組件需要部分檢查，但不是全部。
+
+
+<br /><br />
+系統變得非常難以理解且維護成本高昂。你與這些代碼奮鬥了一段時間，直到有一天你決定重構整個系統
+
+ 
+
+<br /><br />
+
+<img src="/img/chain-of-responsibility-in-development-3.png" alt="chain-of-responsibility-in-development-3" />
+
+像許多其他行為設計模式一樣，責任鏈模式依賴於將特定行為轉化為獨立的對象，稱為處理程序。
+
+該模式建議將這些處理程序鏈接成一個鏈。每個鏈接的處理程序都有一個字段，用於存儲對鏈中下一個處理程序的引用。除了處理請求外，處理程序還會將請求進一步傳遞下去。請求沿著鏈傳遞，直到所有處理程序都有機會處理它。
+
+這裡是最好的部分：處理程序可以決定不再將請求傳遞到鏈的下一個處理程序，從而有效地停止任何進一步的處理
+
+ 
+
+<br /><br />
+
+## 早期的實現方式
+
+### 範例 & 無責任鏈的實現
+ 
+假設我們負責一個販賣手機的電商網站，經過分別繳交 500 元定金和 200 元定金的兩輪預定後(訂單已在此時生成)，現在已經到了正式購買的階段。
+
+- orderType：表示訂單類型(定金用戶或一般購買用戶)
+  - code 的值為 1 的時候是 500 元定金用戶
+  - code 的值為 2 的時候是 200 元定金用戶
+  - code 的值為 3 的時候是普通購買用戶
+
+- pay：表示使用者是否已支付訂金，值為 true 或 false，雖然使用者已經下過 500 元定金的訂單，但如果他一直沒有支付定金，現在只能降級進入普通購買模式。
+
+- stock：表示目前用於普通購買的手機庫存數量，已經支付過 500 元或 200 元定金的用戶不受此限制。
+
+
+<br />
+
+```js
+const order = function (orderType, pay, stock) {
+  if (orderType === 1) {
+    if (pay === true) {
+      console.log('500 元訂金預購, 取得 100 優惠券');
+    } else {
+      if (stock > 0) {
+        console.log('普通購買, 無優惠券');
+      } else {
+        console.log('手機庫存不足');
+      }
+    }
+  }
+
+  else if (orderType === 2) {
+    if (pay === true) {
+      console.log('200 元訂金預購, 取得 50 優惠券');
+    } else {
+      if (stock > 0) {
+        console.log('普通購買, 無優惠券');
+      } else {
+        console.log('手機庫存不足');
+      }
+    }
+  }
+
+  else if (orderType === 3) {
+    if (stock > 0) {
+      console.log('普通購買, 無優惠券');
+    } else {
+      console.log('手機庫存不足');
+    }
+  }
+};
+
+order(1, true, 500); // output: 500 元訂金預購, 取得 100 優惠券
+order(1, false, 0); // output: 手機庫存不足
+order(2, true, 500); // output: 200 元訂金預購, 取得 50 優惠券
+order(3, false, 100); // output: 普通購買, 無優惠券
+```
+
+
+<br /><br />
+
+### 無彈性的責任鏈實現
+
+我們嘗試用責任鏈模式重構程式碼
+
+
+```js
+const orderNormal = function (orderType, pay, stock) {
+  if (stock > 0) {
+    console.log('普通購買, 無優惠券');
+  } else {
+    console.log('手機庫存不足');
+  }
+};
+
+const order200 = function (orderType, pay, stock) {
+  if (orderType === 2 && pay === true) {
+    console.log('200 元訂金預購, 取得 50 優惠券');
+  } else {
+    orderNormal(orderType, pay, stock);
+  }
+};
+
+const order500 = function (orderType, pay, stock) {
+    if (orderType === 1 && pay === true) {
+        console.log('500 元訂金預購, 取得 100 優惠券');
+    } else {
+        order200(orderType, pay, stock);
+    }
+};
+
+order500( 1 , true, 500); // output: 500 元訂金預購, 取得 100 優惠券
+order500( 1, false, 500 ); // output: 普通購買, 無優惠券
+order500( 2, true, 500 ); // output: 200 元訂金預購, 取得 50 優惠券
+order500( 3, false, 500 ); // output: 普通購買, 無優惠券
+order500( 3, false, 0 ); // output: 手機庫存不足
+```
+
+
+<br /><br />
+
+這依然是違反開放-封閉原則的，如果有天我們要增加 300 元預訂或去掉 200 元預訂，意味著就必須改動這些業務函數內部。就像一條環環相扣打了死結的鏈條。
+
+<br /><br />
+
+### 靈活可拆分的責任鏈實現
+
+```js
+const order500 = function (orderType, pay, stock) {
+  if (orderType === 1 && pay === true) {
+    console.log('500 元訂金預購, 取得 100 優惠券');
+  } else {
+    return 'nextSuccessor';
+  }
+};
+
+const order200 = function (orderType, pay, stock) {
+  if (orderType === 2 && pay === true) {
+    console.log('200 元訂金預購, 取得 50 優惠券');
+  } else {
+    return 'nextSuccessor';
+  }
+};
+
+const orderNormal = function (orderType, pay, stock) {
+  if (stock > 0) {
+    console.log('普通購買, 無優惠券');
+  } else {
+    console.log('手機庫存不足');
+  }
+};
+
+class Chain {
+  constructor(fn) {
+    this.fn = fn;
+    this.successor = null;
+  }
+  setNextSuccessor(successor) {
+    this.successor = successor;
+    return this.successor;
+  }
+  passRequest(...args) {
+    const result = this.fn(...args);
+    if (result === 'nextSuccessor') {
+      return this.successor && this.successor.passRequest(...args);
+    }
+    return result;
+  }
+}
+
+const chainOrder500 = new Chain(order500);
+const chainOrder200 = new Chain(order200);
+const chainOrderNormal = new Chain(orderNormal);
+
+chainOrder500
+  .setNextSuccessor(chainOrder200)
+  .setNextSuccessor(chainOrderNormal);
+
+
+chainOrder500.passRequest(1, true, 500); // output: 500 元訂金預購, 取得 100 優惠券
+chainOrder500.passRequest(1, false, 0); // output: 手機庫存不足
+chainOrder500.passRequest(2, true, 500); // output: 200 元訂金預購, 取得 50 優惠券
+chainOrder500.passRequest(3, false, 100); // output: 普通購買, 無優惠券
+chainOrder500.passRequest(3, false, 0); // output: 手機庫存不足
+```
+
+
+<br /><br />
+透過改進，我們可以自由靈活地增加、移除和修改鏈中的節點順序，假如某天網站運營人員又想出了支持 300 元定金購買，那我們就在該鏈中增加一個節點即可
+
+<br /><br />
+
+```js
+const order300 = function (orderType, pay, stock) {
+  if (orderType === 4 && pay === true) {
+    console.log('300 元訂金預購, 取得 60 優惠券');
+  } else {
+    return 'nextSuccessor';
+  }
+};
+
+const chainOrder500 = new Chain(order500);
+const chainOrder300 = new Chain(order300);
+const chainOrder200 = new Chain(order200);
+const chainOrderNormal = new Chain(orderNormal);
+
+chainOrder500
+  .setNextSuccessor(chainOrder300)
+  .setNextSuccessor(chainOrder200)
+  .setNextSuccessor(chainOrderNormal);
+
+chainOrder500.passRequest(4, true, 0); // output: 300 元訂金預購, 取得 60 優惠券
+```
+
+### 非同步實現
+
+
+```js
+class Chain {
+  constructor(fn) {
+    this.fn = fn;
+    this.successor = null;
+  }
+  setNextSuccessor(successor) {
+    this.successor = successor;
+    return this.successor;
+  }
+  passRequest(...args) {
+    const result = this.fn(...args);
+    if (result === 'nextSuccessor') {
+      return this.successor && this.successor.passRequest(...args);
+    }
+    return result;
+  }
+  next(...args) {
+    return this.successor && this.successor.passRequest(...args);
+  }
+}
+
+const fn1 = new Chain(function () {
+  console.log(1);
+  return 'nextSuccessor';
+});
+
+const fn2 = new Chain(function () {
+  console.log(2);
+  var self = this;
+  setTimeout(function () {
+    self.next();
+  }, 1000);
+});
+
+const fn3 = new Chain(function () {
+  console.log(3);
+});
+
+fn1.setNextSuccessor(fn2).setNextSuccessor(fn3);
+fn1.passRequest();
+// 1
+// 2
+// 一秒後印出 3
+```
+
+<br /><br />
+
+## 現代 JS 責任鏈的實現
+
+### 同步鏈的實現：利用 ES6 Class
+ 
+
+```js
+class OrderManager {
+  handle500Deposit() {
+    if (orderType === 1 && pay === true) {
+      throw '500 元訂金預購, 取得 100 優惠券';
+    }
+    return this;
+  }
+
+  handle200Deposit() {
+    if (orderType === 2 && pay === true) {
+      throw '500 元訂金預購, 取得 100 優惠券';
+    }
+    return this;
+  }
+
+  handleNormalOrder() {
+    if (stock > 0) {
+      return '普通購買, 無優惠券';
+    } else {
+      return '手機庫存不足';
+    }
+  }
+
+}
+
+const orderManager = new OrderManager();
+
+try {
+  const normalMessage = orderManager
+    .handle500Deposit()
+    .handle200Deposit()
+    .handleNormalOrder()
+  console.log(normalMessage);
+}
+
+catch(couponMessage) {
+  console.log(couponMessage);
+}
+```
+
+<br /><br />
+
+### 非同步鏈的實現：利用 ES6 Promise
+
+
+```js
+const handle500Deposit = async () => {
+  if (orderType === 1 && pay === true) {
+    throw '500 元訂金預購, 取得 100 優惠券';
+  }
+}
+
+const handle200Deposit = async () => {
+  if (orderType === 2 && pay === true) {
+    throw '500 元訂金預購, 取得 100 優惠券';
+  }
+  return this;
+}
+
+const handleNormalOrder = () => {
+  if (stock > 0) {
+    return '普通購買, 無優惠券';
+  } else {
+    return '手機庫存不足';
+  }
+}
+
+handle500Deposit()
+  .then(handle200Deposit)
+  .then(handleNormalOrder)
+  .then((normalMessage) => {
+    console.log(normalMessage);
+  })
+  .catch((couponMessage) => {
+      console.log(couponMessage);
+  })
+```
+
+<br /><br />
+
+## 實際開發範例
+
+### 1. 取得 CSV 資料：責任鏈模式
+
+
+```jsx
+import { useState } from 'react'
+import './App.css'
+
+function App() {
+  const [csvData, setCsvData] = useState();
+  const [fileError, setFileError] = useState();
+
+  const checkIsCsv = async (e) => {
+    const file = e.target.files[0];
+    if (file.type !== 'text/csv') {
+      throw new Error('File type error');
+    }
+    return file;
+  }
+
+  const readCsvFileText = (csvFile) => {
+    const fileReader = new FileReader();
+    fileReader.readAsText(csvFile);
+
+    return new Promise((resolve) => {
+      fileReader.onload = function(event) {
+        const csvAllText = fileReader.result;
+        resolve(csvAllText);
+      };
+    })
+  }
+
+  const storeCsvData = async (csvData) => {
+    setCsvData(csvData);
+    setFileError('');
+  }
+
+  const getCsvData = (e) => {
+    checkIsCsv(e)
+      .then(readCsvFileText)
+      .then(storeCsvData)
+      .catch((err) => {
+        setCsvData('');
+        setFileError(err.message);
+      })
+  }
+
+  return (
+    <>
+      <input type="file" onChange={getCsvData} />
+      {csvData && (
+        <>
+          <h2>Csv data</h2>
+          <p>{csvData}</p>
+        </>
+      )}
+      {fileError && (
+        <p style={{ color: '#f00' }}>{fileError}</p>
+      )}
+    </>
+  )
+}
+
+export default App
+```
+
+ 
+
+
+<br /><br />
+ 
+
+### 2. 取得 CSV 資料 & 驗證：策略模式 + 責任鏈模式
+
+[Get & Validate CSV data](https://stackblitz.com/edit/vitejs-vite-xjzq5y?file=App.js)
+
+ 
+```jsx
+import { useState } from 'react'
+import Papa from 'papaparse';
+import './App.css'
+
+const fileRulesMap = {
+  isCsv: {
+    test(file) {
+      if (file.type !== 'text/csv') {
+        return 'File type error';
+      }
+    }
+  },
+  isExcceedMax: {
+    test(file) {
+      if (file.size > 200) {
+        return 'Excceed Max size';
+      }
+    }
+  }
+}
+
+const recordRules = {
+  isNameRequired: {
+    test(record) {
+      if (!record.name.length) {
+        return 'Name is required'
+      }
+    }
+  },
+  isEmailRequired: {
+    test(record) {
+      if (!record.name.length) {
+        return 'Email is required'
+      }
+    }
+  }
+}
+
+function App() {
+  const [csvData, setCsvData] = useState();
+  const [fileError, setFileError] = useState();
+
+  const checkIsCsv = async (e) => {
+    const file = e.target.files[0];
+    const fileRules = Object.values(fileRulesMap)
+
+    const errors = fileRules.reduce((errors, fileRule) => {
+      const error = fileRule.test(file);
+      if (error) errors.push(error);
+      return errors;
+    }, [])
+
+    if (errors.length > 0) {
+      throw new Error(errors.join(','))
+    }
+
+    return file;
+  }
+
+  const readCsvFileText = (csvFile) => {
+    const fileReader = new FileReader();
+    fileReader.readAsText(csvFile);
+
+    return new Promise((resolve) => {
+      fileReader.onload = function(event) {
+        const csvAllText = fileReader.result;
+        resolve(csvAllText);
+      };
+    })
+  }
+
+  const storeCsvData = async (csvData) => {
+    setCsvData(csvData);
+    setFileError('');
+	
+    const parsedCsv = Papa.parse(csvData, { header: true });
+    return parsedCsv;
+  }
+
+  const getCsvData = (e) => {
+    checkIsCsv(e)
+      .then(readCsvFileText)
+      .then(storeCsvData)
+      .catch((err) => {
+        setCsvData('');
+        setFileError(err.message);
+      })
+  }
+
+  return (
+    <>
+      <input type="file" onChange={getCsvData} />
+      {csvData && (
+        <>
+          <h2>Csv data</h2>
+          <p>{csvData}</p>
+        </>
+      )}
+      {fileError && (
+        <p style={{ color: '#f00' }}>{fileError}</p>
+      )}
+    </>
+  )
+}
+export default App
+```
+
+<br /><br />
+
+
+## 結論
+1. 當有一系列步驟需要依序執行，且每個步驟都有可能失敗時，且執行順序要很彈性的話，可以使用責任鏈模式
+2. 可以利用 ES6 Class, Promise 來簡單實現責任鏈模式
+
+<br /><br />
+
+### 參考資料
+- [JavaScript设计模式与开发实践](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwjoqvv_goiJAxWvjK8BHUZCK3QQFnoECBcQAQ&url=https%3A%2F%2Fgithub.com%2Fmynane%2FPDF%2Fblob%2Fmaster%2FJavaScript%25E8%25AE%25BE%25E8%25AE%25A1%25E6%25A8%25A1%25E5%25BC%258F%25E4%25B8%258E%25E5%25BC%2580%25E5%258F%2591%25E5%25AE%259E%25E8%25B7%25B5.pdf&usg=AOvVaw2TtCMfHgrVvG0_CV9InyEz&opi=89978449)
+- [Refactoring Guru - Chain of Responsibility](https://refactoring.guru/design-patterns/chain-of-responsibility)
+
+<br /><br />

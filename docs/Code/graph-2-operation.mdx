@@ -1,0 +1,250 @@
+---
+
+sidebar__label: '[Graph] 2. Graph 的基本運算'
+title: '[Graph] 2. Graph 的基本運算'
+
+---
+
+## Graph 的基本運算
+
+我們會以 Adjacency List + Undirected Graph 的前提來實作，後續要轉成 Directed Graph 也很容易。
+總的來說，Graph 的基本運算有 4 個：
+
+- Add Vertex
+- Add Edge
+- Remove Edge
+- Remove Vertex
+
+我們先以 Class 的方式建立 Graph，並先寫出其基本 data structure：
+```js
+class Graph {
+    constructor() {
+        this.adjacencyList = [];
+    }
+}
+```
+
+<br /><br />
+
+接著我們來一步步實現這 4 個 methods：
+
+<br />
+
+
+### 加入 Vertex
+
+加入 vertex 很簡單，只要在 adjacency list 中新增一個 index / key 並給他一個空陣列即可
+
+```js
+class Graph {
+    ...
+    addVertex(vertex) {
+        if (!this.adjacencyList[vertex]) {
+            this.adjacencyList[vertex] = [];
+        }
+    }
+}
+```
+
+<br /><br />
+
+### 加入 Edge
+
+加入 edge，我們需要先確認對應的 vertex 是否存在，如果不存在的話，我們需要先加入 vertex
+
+```js
+class Graph {
+    ...
+    addEdge(vertex1, vertex2) {
+        if (!this.adjacencyList[vertex1]) {
+            this.addVertex(vertex1);
+        }
+        if (!this.adjacencyList[vertex2]) {
+            this.addVertex(vertex2);
+        }
+
+        this.adjacencyList[vertex1].push(vertex2);
+        this.adjacencyList[vertex2].push(vertex1);
+    }
+}
+```
+
+<br /><br />
+
+### 移除 Edge
+
+移除 edge 需要傳入兩個 vertex，並分別在兩個 vertex 的 adjacency list 中將對方的 vertex 移除
+
+```js
+class Graph {
+    ...
+    removeEdge(vertex1, vertex2) {
+        this.adjacencyList[vertex1] = this.adjacencyList[vertex1]
+            .filter(v => v !== vertex2);
+
+        this.adjacencyList[vertex2] = this.adjacencyList[vertex2]
+            .filter(v => v !== vertex1);
+    }
+}
+```
+
+<br /><br />
+
+### 移除 Vertex
+
+移除 vertex V1，我們需要 V1 的 adjacency list 中所有 vertex 移除，並移除 vertex 跟 V1 的 Edge，並且最後再把 V1 adjacency list 移除
+
+```js
+class Graph {
+    ...
+    removeVertex(vertex) {
+        while (this.adjacencyList[vertex].length) {
+            const adjacentVertex = this.adjacencyList[vertex].pop();
+            this.removeEdge(vertex, adjacentVertex);
+        }
+
+        delete this.adjacencyList[vertex];
+    }
+}
+```
+
+<br /><br />
+
+### 完整程式碼
+
+```js
+class Graph {
+    constructor() {
+        this.adjacencyList = [];
+    }
+
+    addVertex(vertex) {
+        if (!this.adjacencyList[vertex]) {
+            this.adjacencyList[vertex] = [];
+        }
+    }
+
+    addEdge(vertex1, vertex2) {
+        if (!this.adjacencyList[vertex1]) {
+            this.addVertex(vertex1);
+        }
+        if (!this.adjacencyList[vertex2]) {
+            this.addVertex(vertex2);
+        }
+
+        this.adjacencyList[vertex1].push(vertex2);
+        this.adjacencyList[vertex2].push(vertex1);
+    }
+
+    removeEdge(vertex1, vertex2) {
+        this.adjacencyList[vertex1] = this.adjacencyList[vertex1]
+            .filter(v => v !== vertex2);
+
+        this.adjacencyList[vertex2] = this.adjacencyList[vertex2]
+            .filter(v => v !== vertex1);
+    }
+
+    removeVertex(vertex) {
+        while (this.adjacencyList[vertex].length) {
+            const adjacentVertex = this.adjacencyList[vertex].pop();
+            this.removeEdge(vertex, adjacentVertex);
+        }
+
+        delete this.adjacencyList[vertex];
+    }
+}
+```
+
+<br /><br />
+
+
+## JS Graph 的快速實現
+
+除了用 Class 實作，我們也可以用 Js 的 array / object literal 來快速實作，這樣的好處是比較直觀，幫助我們在面試時快速實作
+
+- Array
+
+```js showLineNumbers
+const graph = [];
+
+function addVertex(vertex) {
+    if (!graph[vertex]) {
+        graph[vertex] = [];
+    }
+}
+
+function addEdge(vertex1, vertex2) {
+    if (!(vertex1 in graph)) addVertex(vertex1);
+    if (!(vertex2 in graph)) addVertex(vertex2);
+
+    graph[vertex1].push(vertex2);
+    graph[vertex2].push(vertex1);
+}
+
+function removeEdge(vertex1, vertex2) {
+    if (graph[vertex1]) graph[vertex1] = graph[vertex1].filter(v => v !== vertex2);
+    if (graph[vertex2]) graph[vertex2] = graph[vertex2].filter(v => v !== vertex1);
+}
+
+function removeVertex(vertex) {
+    while (graph[vertex].length) {
+        const adjacentVertex = graph[vertex].pop();
+        removeEdge(vertex, adjacentVertex);
+    }
+
+    delete graph[vertex];
+}
+```
+
+<br /><br />
+
+- Object Literal
+
+```js showLineNumbers
+const graph = {};
+
+function addVertex(vertex) {
+    if (!graph[vertex]) {
+        graph[vertex] = [];
+    }
+}
+
+function addEdge(vertex1, vertex2) {
+    if (!(vertex1 in graph)) addVertex(vertex1);
+    if (!(vertex2 in graph)) addVertex(vertex2);
+
+    graph[vertex1].push(vertex2);
+    graph[vertex2].push(vertex1);
+}
+
+function removeEdge(vertex1, vertex2) {
+    if (vertex1 in graph) graph[vertex1] = graph[vertex1].filter(v => v !== vertex2);
+    if (vertex2 in graph) graph[vertex2] = graph[vertex2].filter(v => v !== vertex1);
+}
+
+function removeVertex(vertex) {
+    while (graph[vertex].length) {
+        const adjacentVertex = graph[vertex].pop();
+        removeEdge(vertex, adjacentVertex);
+    }
+
+    delete graph[vertex];
+}
+```
+
+<br /><br />
+
+## 結論
+1. Graph 的基本運算有 4 個：`Add Vertex`, `Add Edge`, `Remove Edge`, `Remove Vertex`
+2. 在做基本運算時，vertex 的運算需要考慮 Edge，Edge 的運算需要考慮 vertex
+3. Graph 可以用 Class 實現，在 JS 也可以用 Array / Object Literal 快速實現
+
+
+<br /><br /><br />
+
+### 參考資料
+- [Colt Steele - JavaScript Algorithms and Data Structures Masterclass](https://www.udemy.com/course/js-algorithms-and-data-structures-masterclass/?couponCode=KEEPLEARNING)
+- [Firebase - Graph Search Algorithms in 100 Seconds - And Beyond with JS](https://www.youtube.com/watch?v=cWNEl4HE2OE)
+
+<br /><br />
+
