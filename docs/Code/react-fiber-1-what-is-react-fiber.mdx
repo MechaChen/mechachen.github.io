@@ -1,0 +1,322 @@
+---
+
+sidebar__label: '[React] React Fiber - 1 - 什麼是 React Fiber?'
+title: '[React] React Fiber - 1 - 什麼是 React Fiber?'
+
+---
+
+## 什麼是 React Fiber? 
+
+React Fiber 是 React 16 引入的一個新架構，用於改善 React 16 前的渲染上的效能問題
+
+<br />
+
+
+## 為什麼需要 React Fiber？ React Fiber 為什麼這麼重要？
+
+在 React 16 之前，如果遇到大量的更新，如下面的動畫，就會造成瀏覽器卡頓，使用者體驗不佳
+
+<iframe
+    id="stack-reconciler-animation"
+    width="560"
+    height="315"
+    src="https://www.youtube.com/embed/BGkyupqB_go?si=so241ZL2eMKJyHzK"
+    title="React old Stack Reconciler"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen
+></iframe>
+
+<br /><br /><br />
+
+有了 React 16 Fiber 架構，效能和網頁流暢度大大提升，使得使用者體驗更好
+
+<iframe
+    id="fiber-animation"
+    width="560"
+    height="315"
+    src="https://www.youtube.com/embed/wLcHRRkYL9w?si=SwVmGCIyVSrwC5VA"
+    title="React Fiber Reconciler"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen
+></iframe>
+
+
+<br /><br /><br /><br />
+
+> 那 React Fiber 到底做了什麼呢？ 之前的架構到底有什麼問題？？
+
+<br /><br />
+
+我們可以先簡單來談談 React 運作的核心兩階段： **Reconciliation phase** 和 **Commit phase**
+
+<img
+    src="/img/reconciler-and-renderer.png"
+    alt="Reconciler and Renderer"
+    width="500"
+/>
+
+<br /><br />
+
+<table>
+    <thead>
+        <tr>
+            <th></th>
+            <th>Reconciliation phase（協調階段）</th>
+            <th>Commit phase（提交階段）</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>目的</td>
+            <td>比較新舊的 Virtual DOM，計算出新的 Virtual DOM</td>
+            <td>更新 Application 的 UI</td>
+        </tr>
+        <tr>
+            <td>負責單位</td>
+            <td>Reconciler</td>
+            <td>Renderer</td>
+        </tr>
+        <tr>
+            <td>優點</td>
+            <td>演算法完全獨立於渲染環境，同一套算法可以用在 Web、App 等</td>
+            <td>僅負責渲染到對應的平台，例如 Web, App 等，跟 state 無關</td>
+        </tr>
+    </tbody>
+</table>
+
+
+<br /><br /><br />
+
+雖然 React 做到關注點分離的概念很棒，但是還有一個大問題，就是 **Reconciliation phase 和 Commit phase 都是同步的**，如果遇到大量更新，就會造成瀏覽器卡頓，如 <a href="#stack-reconciler-animation">動畫 1</a> 一樣
+
+<img
+    src="/img/reconciliation-and-rendering-synchronous.png"
+    alt="Reconciliation and Rendering Synchronous"
+    width="400"
+/>
+
+<br /><br /><br />
+
+因此 React team 為了解決這個問題，引進了 React Fiber 架構，讓 Reconciler 有了 Task scheduling (任務安排) 的能力，包括：
+- Pausing Work (暫停工作)
+- Prioritizing Work (分配任務的優先級)
+- Reusing Work (重複使用工作)
+
+
+<br /><br />
+
+像是在 <a href="#fiber-animation">動畫 2</a> 中，就用到了 Prioritizing Work 的概念，讓高優先級的更新可以先完成，不會被低優先級的更新阻塞，如下圖：
+- 三角形被視為高優先度的任務
+- 定時的數字更新則是低優先度的任務
+
+<img
+    id="fiber-priority"
+    src="/img/fiber-priority.png"
+    alt="Fiber Priority"
+    width="300"
+/>
+
+<br /><br /><br />
+
+我們先優先執行三角形變形動畫的任務，數字的更新因為沒有那麼頻繁跟明顯，所以先暫時擱置，等到三角形變形動畫完成後，再回過頭來更新數字
+
+<br /><br />
+
+接著我們就來細談 Fiber 的 Task Scheduling 如何運作的
+
+
+<br /><br />
+
+## Fiber Task Scheduling
+
+### Pausing Work
+
+有了 Fiber 架構，我們會知道<a href="https://web.dev/articles/rendering-performance">每一幀 (約 16.66 ms)</a> 的時間上執行任務，當沒有時間時，我們可以暫停一些優先度較低的工作，去做其他更重要的工作，之後再回來完成剩下的任務
+
+<br /><br />
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+    <div style={{ marginRight: '20px' }}>
+        <img
+            src="/img/full-time-remaining.png"
+            alt="Full Time Remaining"
+            width="100%"
+        />
+        <p style={{ textAlign: 'center' }}>Full Time Remaining</p>
+    </div>
+    <div>
+        <img
+            src="/img/no-time-remaining.png"
+            alt="No Time Remaining"
+            width="100%"
+        />
+        <p style={{ textAlign: 'center' }}>No Time Remaining</p>
+    </div>
+</div>
+
+<br /><br />
+
+可以參考下面的過程
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/0fUmOPQUv-Q?si=_Nd6wzdFMXKdQ9IU&amp;clip=UgkxvhqewFMkCzx7EnZBpJjV_fsKXnw3HSxq&amp;clipt=EPDlDxjQuhM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+
+<br /><br /><br />
+
+### Prioritizing Work
+
+在介紹 React Fiber 時有提到 React 決定了各類營工作的 Priority，那怎麼決定什麼是更重要的工作呢？
+
+在 <a href="https://github.com/facebook/react/blob/v16.0.0/src/renderers/shared/fiber/ReactPriorityLevel.js">React v16 的原始碼</a>裡面有定義
+
+```js
+// v16 ReactPriorityLevel.js
+module.exports = {
+  NoWork: 0, // No work is pending.
+  SynchronousPriority: 1, // For controlled text inputs. Synchronous side-effects.
+  TaskPriority: 2, // Completes at the end of the current tick.
+  HighPriority: 3, // Interaction that needs to complete pretty soon to feel responsive.
+  LowPriority: 4, // Data fetching, or result from updating stores.
+  OffscreenPriority: 5, // Won't be visible but do the work in case it becomes visible.
+};
+```
+
+我們可以看到
+
+- `SynchronousPriority`：同步的優先級，用於控制文字輸入等同步的 side-effects，為最高的優先級
+- `TaskPriority`：在當前 <a href="https://github.com/getify/You-Dont-Know-JS/blob/1st-ed/async%20%26%20performance/ch1.md#:~:text=each%20iteration%20of%20this%20loop%20is%20called%20a%20%22tick.%22">tick （也就是每一次 Event Loop 的循環)</a> 結束時完成的優先級，為第二高的優先級
+- `HighPriority`：用於需要快速響應的交互，例如點擊、輸入等，為第三高的優先級
+- `LowPriority`：用於數據獲取或更新 store 等，為第四高的優先級
+- `OffscreenPriority`：不會顯示在畫面上的 Task，用於不會立即顯示但可能在顯示時需要完成的工作，為最低的優先級
+
+<br /><br />
+
+有了這些 Priority 的定義，當 Task 進來 React 時，會根據 Task 的優先級來決定 Task 的執行順序
+
+<img
+    id="priority-task-order"
+    src="/img/priority-task-order.png"
+    alt="Priority Task Order"
+    width="400"
+/>
+
+<br /><br />
+
+:::info 類似 Priority Queue 的概念
+如果你剛好有學過 Priority Queue 這個 Data Structure，會發現這概念很類似，在 React 後續的版本中，也<a href="https://github.com/facebook/react/blob/e62a8d754548a490c2a3bcff3b420e5eedaf11c0/packages/scheduler/src/SchedulerMinHeap.js">實現了自己的 Min Heap</a> 來實現 Priority Queue 的概念
+:::
+
+<br /><br /><br />
+
+如上圖 所示，三角形變形動畫的優先級為 `HighPriority`，而數字更新的優先級為 `LowPriority`，所以三角形變形動畫會先完成，數字更新則是後面再完成
+
+<img
+    src="/img/fiber-priority.png"
+    alt="Fiber Priority Example"
+    width="300"
+/>
+
+<br /><br /><br />
+
+
+### Reusing Work
+
+在舊的 Stack reconciler 中，沒有 cache Virtual DOM 每個 node 的機制，若發現某個 node 需要更新，會重新把整個 Virtual DOM 遍歷過一遍，造成計算 Virtual DOM 花費的時間很久，但僅更新部分的 Real DOM
+
+新的 Fiber reconciler 引進後，有了 Reusing work (cache) 的機制，會重新運用 Virtual DOM 之前的計算結果，優化性能
+
+<img
+    src="/img/reusing-work.png"
+    alt="Reusing Work"
+    width="400"
+/>
+
+<br /><br /><br />
+
+動畫解說如下
+
+<iframe
+    width="560"
+    height="315"
+    src="https://www.youtube.com/embed/0fUmOPQUv-Q?si=Yt2B6uuj-4u343xH&amp;clip=UgkxOwvuqTNAKdruXjQlBNWwRIHvGREF23J9&amp;clipt=EKyCGRiXxBw"
+    title="YouTube video player"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen
+></iframe>
+
+<br /><br /><br />
+
+
+## 題外話：為什麼叫 Fiber？
+
+我當初一直很納悶為什麼叫 Fiber，我第一時間想到的是所謂的光纖（可以參考下面影片）：
+
+<iframe
+    width="560"
+    height="315"
+    src="https://www.youtube.com/embed/o5t6evogJbg?si=1DdpL5R-C_CKtx7P"
+    title="YouTube video player"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen
+></iframe>
+
+
+<br /><br /><br />
+
+因為也找不到官方有 Fiber 這個名稱的典故，所以我也問了 Chat GPT 一下，我得到的回答是：
+
+<br />
+
+> React Fiber 和光纖的唯一共同點在於「分割成細小單元以提高處理效率」：
+> - React Fiber 將渲染工作分解成細小的「fiber units」，允許它在需要時中斷、重新調整優先級，並進行優先處理，這樣應用程式可以保持流暢、即時的反應。
+> - 光纖則是將光訊號快速且穩定地傳輸，以小分段方式達到長距離和高效能的資料傳輸
+
+<br />
+
+我個人覺得這個原因還是蠻牽強的，我比較認同的只有：
+- ✅ React Fiber 是極小的單元，跟光纖的直徑同頭髮一樣細，使得 React 的 task scheduling 可以非常彈性
+- ✅ React Fiber 能高效地處理資料，就像光纖能高效地傳輸光訊號一樣
+
+<br />
+
+不認同的是：
+- ❌ 一根光纖的長度是可以非常長的，不會分段串接處理，但 React Fiber 將多個 fiber nodes 串接在一起
+- ❌ 光纖的彈性來自於材質本身，一根的長度就可以拿來照胃鏡或探測多彎道的管道裡，不是透過分段處理的方法產身的彈性
+- ❌ 光纖的傳輸並沒有優先級的概念，但 React Fiber 有
+
+<br /><br />
+
+但如果以總結來說，像是光纖讓光的傳輸有效率，讓原始的光能夠不遺失能量且有效率地傳輸，<br />
+React Fiber 讓渲染有效率，讓原本渲染機制順利運作且不會掉禎，我覺得這樣的說法就比較可以接受
+
+<br /><br />
+
+## 結論
+- React Fiber 是 React 16 引入的新架構，引進了 Task Scheduling 的能力，用於改善 React 16 前的渲染上的效能問題
+- Task Scheduling 的能力包含 Pausing Work、Prioritizing Work 和 Reusing Work：
+    - Prioritizing Work：分配任務的優先級，讓高優先級的工作可以先完成，不會被低優先級的工作阻塞
+    - Pausing Work：暫停低優先度的工作，先以每一幀能順利渲染為主
+    - Reusing Work：重複使用舊 Virtual DOM 的計算結果，讓新 Virtual DOM 產生過程不需要每次都要大量的計算
+
+
+<br /><br /><br />
+
+### 參考資料
+
+- [Vercel & ex-React Core Team member - Andrew Clark - React Fiber Architecture](https://github.com/acdlite/react-fiber-architecture)
+- [Fullstack Academy - Brief Overview of React Fiber - A Tutorial on its Features and Advantages](https://www.youtube.com/watch?v=0fUmOPQUv-Q&t=424s&pp=ygURcmVhY3QgZmliZXIgaW50cm8%3D)
+- [React v16.0 source code](https://github.com/facebook/react/tree/v16.0.0)
+- [You Don't Know JS - Async & Performance](https://github.com/getify/You-Dont-Know-JS/blob/1st-ed/async%20%26%20performance/ch1.md#:~:text=each%20iteration%20of%20this%20loop%20is%20called%20a%20%22tick.%22)
+- [web.dev - Rendering Performance](https://web.dev/articles/rendering-performance)
+- [What is Fiber Optics? | Mocomi Kids](https://www.youtube.com/watch?app=desktop&v=o5t6evogJbg)
+
+<br /><br /><br />
+

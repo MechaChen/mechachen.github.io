@@ -1,0 +1,436 @@
+---
+sidebar_label: '[Implement] 100 行實現 React Virtualized'
+title: '[Implement] 100 行實現 React Virtualized'
+tags:
+  - Implement
+  - React
+  - Virtualized
+
+---
+
+:::info 原始碼在這，歡迎參考～
+https://github.com/MechaChen/react-virtualize-lite
+:::
+
+<br />
+
+## 為什麼需要 Virtualized？
+
+對於一個超級長的列表來說，有可能造成渲染時上的效能問題，例如
+- 滑動的太快時，會有短時間的白畫面 (此範例約 100,000 個元素時會有此問題)
+- 記憶體使用量過高，讓 browser 直接 crash (此範例 1,000,000 個元素時會直接 crash)
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/W9J4aH8B474?si=stEUK0vJgI6_hfd6" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+
+<br /><br /><br />
+
+為了避免上述問題，我們可以利用 Virtualized 的技巧，產生的結果如下影片
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/yX-lbiR9000?si=3g6kUAijx1isYGtr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<br /><br /><br />
+
+Virtualized 的概念是，只渲染畫面可見的元素，進而優化我們的效能
+
+以下我們就來簡單實作一個 react virtualized 來了解背後如何運作的！
+
+<br /><br /><br />
+
+
+## Virtualize 的實作概念
+
+首先，我們先來看看還沒有 Virtualized 的程式碼，基本上就是
+- 有一個列表，會渲染 100,000 個 list item
+- 整個列表的高度為 500px
+- 每個 list item 的高度為 35px
+- 每個 list item 的背景顏色會灰白交替
+
+```jsx
+const itemHeight = 35; // Adjustable global variable
+
+const ListItem = ({ index }) => {
+  return (
+    <li
+      className="text-center w-full leading-9"
+      style={{ backgroundColor: index % 2 === 0 ? '#f0f0f0' : 'white' }}
+    >
+      List Item Index - {index}
+    </li>
+  );
+};
+
+export const NonVirtualizedList = ({
+  numberOfItems,
+}) => {
+  const listItems = Array.from({ length: numberOfItems }, (_, index) => (
+    <ListItem key={index} index={index} />
+  ));
+
+  return (
+    <ul
+      className="overflow-y-scroll w-full h-[500px] border-2 border-black"
+      onScroll={(e) => {
+        console.log('Scrolling ', e.currentTarget.scrollTop);
+      }}
+    >
+      {listItems}
+    </ul>
+  );
+};
+
+export const numberOfItems = 100000;
+
+export default function NonVirtualized() {
+  return (
+    <div className="flex flex-col items-center justify-center h-[100vh]">
+      <h1 className="pb-4">Rendering {numberOfItems.toLocaleString()}</h1>
+      <NonVirtualizedList numberOfItems={numberOfItems} />
+    </div>
+  );
+}
+```
+
+<br /><br />
+
+有了上述的程式碼後，我們就來用 Virtualized 的技巧來優化它吧！
+
+<br /><br />
+
+### 1. 計算 start, end 元素的位置
+
+首先，為了僅顯示出畫面可見的元素，我們有 4 件事要做
+1. 將 list item 設定為 absolute，並且設定 top 為第 i 的 item 應該要有的位置
+2. 取得現在滾動的高度
+3. 計算出畫面中一開始和結束的元素位置
+    - 開始的元素位置 `startIndex`：就是在視窗剛開始的位置，計算方式為視窗滾動的高度 (scrollTop) / 每個 item 的高度 (itemHeight)
+
+    - 結束的元素位置 `endIndex`：就是在視窗結束的位置，計算方式為視窗滾動的高度 (scrollTop) + 視窗高度 (windowHeight) / 每個 item 的高度 (itemHeight)
+4. 僅渲染 `startIndex` 到 `endIndex` 的元素
+
+```jsx
+import { useState } from "react";
+
+const itemHeight = 35; // Adjustable global variable
+const windowHeight = 500;
+
+const ListItem = ({ index }) => {
+  return (
+    <li
+      style={{
+        height: `${itemHeight}px`,
+        // highlight-start
+        // STEP 1. 將 list item 設定為 absolute，並且設定 top 為第 i 的 item 應該要有的位置
+        top: `${itemHeight * index}px`,
+        backgroundColor: index % 2 === 0 ? '#f0f0f0' : 'white'
+      }}
+      className="text-center absolute w-full leading-9"
+      // highlight-end
+    >
+      List Item Index - {index}
+    </li>
+  );
+};
+
+const VirtualizedList = ({
+  numberOfItems,
+}) => {
+  // highlight-start
+  // STEP 2. 計算出畫面中一開始和結束的元素位置
+  const [scrollTop, setScrollTop] = useState(0);
+  const startIndex = Math.floor(scrollTop / itemHeight);
+  const endIndex = Math.floor((scrollTop + windowHeight) / itemHeight);
+  // highlight-end
+
+  // highlight-start
+  // STEP 3. 僅渲染 `startIndex` 到 `endIndex` 的元素
+  const listItems = (() => {
+    const items = [];
+    for (let i = startIndex; i <= endIndex; i++) {
+      items.push(<ListItem key={i} index={i} />);
+    }
+    return items;
+  })();
+  // highlight-end
+
+
+  return (
+    <ul
+      // highlight-start
+      // STEP 1. 將 ul 設定為 relative
+      className="overflow-y-scroll w-full h-[500px] border-2 border-black relative"
+      // STEP 2. 取得現在滾動的高度
+      onScroll={(e) => {
+        setScrollTop(e.currentTarget.scrollTop);
+      }}
+      // highlight-end
+    >
+      {listItems}
+    </ul>
+  );
+};
+
+export const numberOfItems = 100000;
+
+export default function Virtualized() {
+  return (
+    <div className="flex flex-col items-center justify-center h-[100vh]">
+      <h1 className="pb-4">Rendering {numberOfItems.toLocaleString()}</h1>
+      <VirtualizedList numberOfItems={numberOfItems} />
+    </div>
+  );
+}
+```
+
+<br /><br />
+
+以下就是我們的成果！
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ZDYvKafPLZQ?si=p2WNxomFtVcXZ6Ag" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<br /><br />
+
+### 2. 流暢地滾動
+
+雖然我們可以成功的只顯示出畫面可見的元素，但目前的實作有個問題，就是 scroll bar 的長度會動態的變小
+會造成這樣的原因是，是因為可見的 0th item 的 top 位置會根據 index 而遞增，例如範例中雖然我們都只顯示 500 / 35 = 14 個元素，但是
+- 可見 0th index 為 0 時，top 為 0，整串 list 的高度為 35 * 14 = 490
+- 可見 0th index 為 30 時，top 為 35 * 30 = 1050，整串 list 的高度為 35 * (30 + 14) = 1470 (30 為 window 上看不見得空白部分)
+- 可見 0th index 為 100 時，top 為 35 * 100 = 3500，整串 list 的高度為 35 * (100 + 14) = 4900 (100 為 window 上看不見得空白部分)
+- ...
+
+所以對 ul 來說，所有 list items 的長度是動態的，進而造成 scroll bar 的長度也會動態的變小，配合 list items 實際的長度
+
+<br />
+
+為了修正這個問題，我們可以把整個 ul 的高度設為所有 list items 的高度，以範例來說就是 35 * (100,000) = 3,500,000，
+這樣 scroll bar 就會固定不變了，修正的程式碼如下
+
+```jsx
+const VirtualizedList = ({
+  numberOfItems,
+}) => {
+  const [scrollTop, setScrollTop] = useState(0);
+  const startIndex = Math.floor(scrollTop / itemHeight);
+  const endIndex = Math.floor((scrollTop + windowHeight) / itemHeight);
+
+  // highlight-start
+  const totalHeight = numberOfItems * itemHeight;
+  // highlight-end
+
+  const listItems = (() => {
+    const items = [];
+    for (let i = startIndex; i <= endIndex; i++) {
+      items.push(<ListItem key={i} index={i} />);
+    }
+    return items;
+  })();
+
+
+  return (
+    <ul
+      className="overflow-y-scroll w-full h-[500px] border-2 border-black relative"
+      style={{ height: `${windowHeight}px` }}
+      onScroll={(e) => {
+        setScrollTop(e.currentTarget.scrollTop);
+      }}
+    >
+      {/* highlight-start */}
+      <div style={{
+        height: `${totalHeight}px`
+      }}>
+      {/* highlight-end */}
+        {listItems}
+      </div>
+    </ul>
+  );
+};
+```
+
+<br /><br />
+
+以下就是我們修正的成果～
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/xU1N9W8hyvs?si=ElRGt1u1ux1pJR8Y" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<br /><br />
+
+### 3. 加上前後 preload 的元素
+
+雖然我們解決了 scroll bar 的問題，但在往下或往上滾動時，會有短暫的空白區塊，這是因為新的元素計算完後，還沒有被渲染出來
+
+<br />
+
+為了避免這個問題，我們可以預先渲染前後幾個元素，以範例來說，我們可以在上下多先渲染 10 個元素，修正的程式碼如下
+
+:::caution
+
+這邊要注意的是，我們在計算包含 preload 的 startIndex 和 endIndex 時，要注意
+- `preloadStartIndex` 不能小於 0，不然 list item 會從負的開始
+- `preloadEndIndex` 不能大於 `numberOfItems`，不然 list item 會超出範圍
+:::
+
+<br />
+
+```jsx
+// highlight-start
+const preloadCount = 10;
+// highlight-end
+
+const VirtualizedList = ({
+  numberOfItems,
+}) => {
+  const [scrollTop, setScrollTop] = useState(0);
+  
+  const startIndex = Math.floor(scrollTop / itemHeight);
+  // highlight-start
+  const preloadStartIndex = Math.max(0, startIndex - preloadCount);
+  // highlight-end
+
+  const endIndex = Math.floor((scrollTop + windowHeight) / itemHeight);
+  // highlight-start
+  const preloadEndIndex = Math.min(numberOfItems, endIndex + preloadCount);
+  // highlight-end
+
+  const totalHeight = numberOfItems * itemHeight;
+
+  const listItems = (() => {
+    const items = [];
+    // highlight-start
+    for (let i = preloadStartIndex; i <= preloadEndIndex; i++) {
+    // highlight-end
+      items.push(<ListItem key={i} index={i} />);
+    }
+    return items;
+  })();
+
+
+  return (
+    <ul
+      className="overflow-y-scroll w-full h-[500px] border-2 border-black relative"
+      style={{ height: `${windowHeight}px` }}
+      onScroll={(e) => {
+        setScrollTop(e.currentTarget.scrollTop);
+      }}
+    >
+      <div style={{
+        height: `${totalHeight}px`
+      }}>
+        {listItems}
+      </div>
+    </ul>
+  );
+};
+```
+
+<br /><br />
+
+經過最後的修正後，我們就完成一個簡單的 react virtualized 了！
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AFqA9lG7G48?si=fHGk6WZ8c-jYG0zi" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<br /><br />
+
+## 優化
+
+### CSS `transform`
+
+除了使用 `position: absolute` 外，我們也可以使用 CSS `transform` 來達到相同的效果，
+而且可以盡量避免使用 `position: absolute` 造成頻繁 reflow 的情況，僅利用 repaint 來達到效果
+
+實作方式跟上面大同小異，僅差
+- 我們只計算 `startIndex`
+- 計算要渲染的元素數量，此處為 500/35 + 2 * 10 = 14 + 20 = 34 個 item，若剩下數量小於 34 個 item，則只渲染剩下的 item，直到只剩剛好填滿 windowHeight 的數量
+- 利用 `transform: translateY`，將整個列表部分往下推
+
+```jsx
+const VirtualizedList = ({
+  numberOfItems,
+}) => {
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const startIndex = Math.floor(scrollTop / itemHeight);
+
+  // highlight-start
+  // 從 startIndex 開始，原本會預設渲染 floor(500 / 35) + 2 * 10 = 14 + 20 = 34 個 item
+  // 但最後剩下只夠渲染不到 34 個 item 時，則只渲染剩下的 item，直到只剩 14 個 item
+  const renderedCount = Math.floor(windowHeight / itemHeight) + 2 * preloadCount;
+  const restItemsCount = numberOfItems - startIndex;
+
+  const preloadedRenderedCount = Math.min(restItemsCount, renderedCount);
+  // highlight-end
+  
+  const totalHeight = numberOfItems * itemHeight;
+
+  const listItems = (() => {
+    const items = [];
+    // highlight-start
+    for (let i = 0; i <= preloadedRenderedCount; i++) {
+      const index = startIndex + i;
+      items.push(<ListItem key={index} index={index} />);
+      // highlight-end
+    }
+    return items;
+  })();
+
+
+  return (
+    <ul
+      className="overflow-y-scroll w-full h-[500px] border-2 border-black"
+      style={{ height: `${windowHeight}px` }}
+      onScroll={(e) => {
+        setScrollTop(e.currentTarget.scrollTop);
+      }}
+    >
+      <div style={{
+        height: `${totalHeight}px`
+      }}>
+        {/* highlight-start */}
+        <div style={{
+          transform: `translateY(${startIndex * itemHeight}px)`
+        }}>
+        {/* highlight-end */}
+          {listItems}
+        </div>
+      </div>
+    </ul>
+  );
+};
+```
+
+<br /><br />
+
+
+## 結論
+React Virtualized 的實作只需要 3 步驟
+1. 計算出畫面中一的 startIndex 和 endIndex（或者是需要渲染的數量），並且只渲染出 `startIndex` 到 `endIndex` 的元素
+2. 為了保持捲軸大小一致，滾動空間要維持一樣大，所以要直接給定整個 list 的高度，就算實際上只有畫面可見 items
+3. 加上前後 preload 的元素，避免滾動時造成空白區塊
+4. 可用 `CSS transform` 來取代 `position: absolute`，避免頻繁的 reflow
+
+
+
+<br />
+<br />
+<br />
+
+
+
+
+### 參考資料
+- [Let's Build a VIRTUALIZED LIST from Scratch in React.js](https://www.youtube.com/watch?v=Yz4eK-4LKXg)
+- [Build your Own Virtual Scroll - Part I](https://dev.to/adamklein/build-your-own-virtual-scroll-part-i-11ib)
+- [Build your own virtual scroll - Part II](https://dev.to/adamklein/build-your-own-virtual-scroll-part-ii-3j86)
+- [virtual-scroll-dynamic-heights-using-hooks](https://codesandbox.io/p/sandbox/virtual-scroll-dynamic-heights-using-hooks-forked-mtqd54?file=%2Fsrc%2FVirtualScroll.js%3A37%2C7-37%2C20)
+
+
+
+
+
+<br />
+<br />
+<br />
+
+
+
+

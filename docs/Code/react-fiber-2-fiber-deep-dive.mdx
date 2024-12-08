@@ -1,0 +1,488 @@
+---
+
+sidebar__label: '[React] React Fiber - 2 - 深入 React 原始碼'
+title: '[React] React Fiber - 2 - 深入 React 原始碼'
+
+---
+
+:::note
+此篇原始碼解說文主要以剛出現 Fiber 架構的 React v16.0 為主，因為相對完整和簡單，後續的版本差異請自行參考官方原始碼
+:::
+
+
+## Fiber tree
+
+就像 HTML DOM 是 tree data structure，React 的 Virtual DOM 也是 tree data structure，React
+
+但在內部，React 會有兩個 Virtual DOM tree（或稱 Fiber tree），一個是 current tree，另一個是 work in progress tree
+- Current tree：目前正在瀏覽器渲染的 Fiber tree
+- Work in progress tree：正在計算更新的 Fiber tree
+
+<br />
+
+而且 React 內部會有一個 pointer，指向現在要渲染出來的 Fiber tree 是哪一個，當 Work In Progress Tree 計算完成後，會取代 Current Tree，成為新的 Current Tree，示意動畫如下：
+
+<iframe
+    width="560"
+    height="315"
+    src="https://www.youtube.com/embed/0ympFIwQFJw?clip=UgkxLL9RuKWj8Lj9BD-2P3FEO_Q9KxBpZvE2&amp;clipt=EMj5IxigqiY"
+    title="YouTube video player"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen
+></iframe>
+
+<br /><br /><br />
+
+## Work Loop
+
+因為狀態更新而開始計算 Work In Progress Tree 的過程中，React 會類似 Recursion 的方式，處理 Fiber nodes
+- 當從 root fiber node 開始計算時，會呼叫 `beginWork` (<a href="https://github.com/facebook/react/blob/5c6ef4044610a2a325780261f41730a33a919f98/src/renderers/shared/fiber/ReactFiberScheduler.js#L710">v16 Line 710</a>) 函式，生成或更新現在的 fiber node
+- 當計算到 leaf fiber node 時，會呼叫 `completeWork`(<a href="https://github.com/facebook/react/blob/5c6ef4044610a2a325780261f41730a33a919f98/src/renderers/shared/fiber/ReactFiberScheduler.js#L618">v16 Line 618</a>) 函式回到 parent fiber node
+
+<iframe
+    width="560"
+    height="315"
+    src="https://www.youtube.com/embed/0ympFIwQFJw?si=QM7NXhnLT95ulWyc&amp;clip=UgkxVKLmWOIrHycqijRwPEAwQSPCkfRx329y&amp;clipt=ELzENhicmTo"
+    title="YouTube video player"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen
+></iframe>
+
+<br /><br /><br />
+
+
+## Fiber node 的結構
+
+那在遍歷每個 Fiber node 的過程中，究竟處理了什麼呢？ 這就要來看看 Fiber node 的結構了
+
+Fiber node 的結構如下 (<a href="https://github.com/facebook/react/blob/5c6ef4044610a2a325780261f41730a33a919f98/src/renderers/shared/fiber/ReactFiber.js#L64">v16 ReactFiber.js Line 64</a>)：
+
+```tsx showLineNumbers
+export type Fiber = {
+  // These first fields are conceptually members of an Instance. This used to
+  // be split into a separate type and intersected with the other Fiber fields,
+  // but until Flow fixes its intersection bugs, we've merged them into a
+  // single type.
+
+  // An Instance is shared between all versions of a component. We can easily
+  // break this out into a separate object to avoid copying so much to the
+  // alternate versions of the tree. We put this on a single object for now to
+  // minimize the number of objects created during the initial render.
+
+  // Tag identifying the type of fiber.
+  tag: TypeOfWork,
+
+  // Unique identifier of this child.
+  key: null | string,
+
+  // The function/class/module associated with this fiber.
+  type: any,
+
+  return: Fiber | null,
+
+  // Singly Linked List Tree Structure.
+  child: Fiber | null,
+  sibling: Fiber | null,
+  index: number,
+
+
+  // Input is the data coming into process this fiber. Arguments. Props.
+  pendingProps: any, // This type will be more specific once we overload the tag.
+  memoizedProps: any, // The props used to create the output.
+
+  // A queue of state updates and callbacks.
+  updateQueue: UpdateQueue | null,
+
+  // The state used to create the output
+  memoizedState: any,
+
+  // This will be used to quickly determine if a subtree has no pending changes.
+  pendingWorkPriority: PriorityLevel,
+
+  // This is a pooled version of a Fiber. Every fiber that gets updated will
+  // eventually have a pair. There are cases when we can clean up pairs to save
+  // memory if we need to.
+  alternate: Fiber | null,
+
+  ...
+};
+```
+
+<br /><br />
+
+### `tag`
+
+tag 是給 React 內部辨識用的，用於區分此 Fiber node 要怎麼處理，像是 `FunctionComponent`、`ClassComponent`、`HostComponent` 等等，
+在 <a href="https://github.com/facebook/react/blob/v16.0.0/src/shared/ReactTypeOfWork.js">`ReactTypeOfWork.js` file</a> 中定義了所有可能的 tag 類型，如下：
+
+```tsx
+export type TypeOfWork = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+module.exports = {
+  IndeterminateComponent: 0, // Before we know whether it is functional or class
+  FunctionalComponent: 1,
+  ClassComponent: 2,
+  HostRoot: 3, // Root of a host tree. Could be nested inside another node.
+  HostPortal: 4, // A subtree. Could be an entry point to a different renderer.
+  HostComponent: 5,
+  HostText: 6,
+  CoroutineComponent: 7,
+  CoroutineHandlerPhase: 8,
+  YieldComponent: 9,
+  Fragment: 10,
+};
+```
+
+<br />
+
+舉例來說：
+```tsx
+function MyButton() {
+  return <button>Click me</button>;
+}
+
+// 對應的 Fiber 節點
+{
+  tag: FunctionComponent, // 表示這是一個函數組件
+  // ...
+}
+
+```
+
+<br /><br />
+
+使用的情境，像是在<a href="https://github.com/facebook/react/blob/5c6ef4044610a2a325780261f41730a33a919f98/src/renderers/shared/fiber/ReactFiberBeginWork.js#L716">原始碼中 `beginWork` 函式</a>中，會根據 tag 類型，決定要更新 Fiber node 的方式，如下：
+
+```tsx
+function beginWork(
+  current: Fiber | null,
+  workInProgress: Fiber,
+  priorityLevel: PriorityLevel,
+): Fiber | null {
+  if (
+    workInProgress.pendingWorkPriority === NoWork ||
+      workInProgress.pendingWorkPriority > priorityLevel
+    ) {
+      return bailoutOnLowPriority(current, workInProgress);
+    }
+
+    if (__DEV__) {
+      ReactDebugCurrentFiber.setCurrentFiber(workInProgress, null);
+    }
+
+    // highlight-start
+    switch (workInProgress.tag) {
+    // highlight-end
+      case IndeterminateComponent:
+        return mountIndeterminateComponent(
+          current,
+          workInProgress,
+          priorityLevel,
+        );
+      case FunctionalComponent:
+        return updateFunctionalComponent(current, workInProgress);
+      case ClassComponent:
+        return updateClassComponent(current, workInProgress, priorityLevel);
+      case HostRoot:
+        return updateHostRoot(current, workInProgress, priorityLevel);
+      case HostComponent:
+        return updateHostComponent(current, workInProgress, priorityLevel);
+      case HostText:
+        return updateHostText(current, workInProgress);
+      case CoroutineHandlerPhase:
+        // This is a restart. Reset the tag to the initial phase.
+        workInProgress.tag = CoroutineComponent;
+      // Intentionally fall through since this is now the same.
+      case CoroutineComponent:
+        return updateCoroutineComponent(current, workInProgress);
+      case YieldComponent:
+        // A yield component is just a placeholder, we can just run through the
+        // next one immediately.
+        return null;
+      case HostPortal:
+        return updatePortalComponent(current, workInProgress);
+      case Fragment:
+        return updateFragment(current, workInProgress);
+      default:
+        invariant(
+        false,
+        'Unknown unit of work tag. This error is likely caused by a bug in ' +
+        'React. Please file an issue.',
+      );
+  }
+}
+```
+
+<br /><br />
+
+### `key` & `type`
+
+`key` 和 `type` 的主要目的都是用來辨識 Fiber node 跟舊的 Fiber node 是否相同，以決定是否可以復用舊的 Fiber node
+- `key`：Fiber node 的 id，用於識別同一個父節點下的子節點
+- `type`：指到對應的 element 類型，如果是 Component，就是對應 Component 的名稱，如果是 DOM element，就是對應的 DOM tag name
+
+<br />
+
+舉例來說：
+```tsx
+function MyButton() {
+  return <button>Click me</button>;
+}
+
+// 對應的 Fiber 節點
+{
+  type: MyButton, // 指向 MyButton 函數
+  // ...
+}
+
+{
+  type: 'button', // 指向 button DOM element
+  // ...
+}
+```
+
+<br /><br />
+
+在<a href="https://github.com/facebook/react/blob/5c6ef4044610a2a325780261f41730a33a919f98/src/renderers/shared/fiber/ReactChildFiber.js#L1133">原始碼 `ReactChildFiber.js`</a>中，可以看到 `key` 和 `type` 的用途，
+就是 reconciliation 的核心邏輯：
+
+> 1. 嘗試覆用現有 Fiber 節點：逐一檢查當前的 Fiber 節點（currentFirstChild 和它的 siblings），判斷它們是否可以覆用。
+>   - 如果可以覆用，更新該節點的相關屬性（props、ref 等）。
+>   - 如果不能覆用，則刪除舊節點。
+> <br /><br />
+>
+> 2. 比較的核心條件：
+> - key 是否相同：React 使用 key 來唯一標識列表中的每個元素。如果 key 不同，則認為是全新的節點，刪除舊節點。
+> - type 是否相同：即使 key 相同，還需檢查節點類型是否一致（例如 div 與 span 是不同的 type）。
+> <br /><br />
+>
+> 3. 若無法覆用，則刪除舊節點，並為新的 ReactElement 創建一個新的 Fiber 節點。
+>
+> 4. 往 sibling 移動：如果當前節點無法覆用，會繼續檢查它的 sibling，直到所有可能覆用的節點都被檢查完畢
+
+<br />
+
+```tsx
+function reconcileSingleElement(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber | null,
+    element: ReactElement,
+    priority: PriorityLevel,
+): Fiber {
+    const key = element.key;
+    let child = currentFirstChild;
+    while (child !== null) {
+      // TODO: If key === null and child.key === null, then this only applies to
+      // the first item in the list.
+      // highlight-start
+      if (child.key === key) {
+        if (child.type === element.type) {
+          // highlight-end
+          deleteRemainingChildren(returnFiber, child.sibling);
+          const existing = useFiber(child, priority);
+          existing.ref = coerceRef(child, element);
+          existing.pendingProps = element.props;
+          existing.return = returnFiber;
+          if (__DEV__) {
+            existing._debugSource = element._source;
+            existing._debugOwner = element._owner;
+          }
+          return existing;
+        } else {
+          deleteRemainingChildren(returnFiber, child);
+          break;
+        }
+      } else {
+        deleteChild(returnFiber, child);
+      }
+      child = child.sibling;
+    }
+}
+```
+
+<br />
+
+### `child`, `sibling`, `return`
+
+- `child`：現在 fiber node 的第一個子 node
+- `sibling`：現在 fiber node 的下一個鄰近的 node
+- `return`：現在 fiber node 的 parent node，在執行 `completeWork` 會回到的 fiber node
+
+<br />
+
+### `pendingWorkPriority`
+
+`pendingWorkPriority` 用於定義 Fiber node 的優先級，根據 v16 的原始碼，`pendingWorkPriority` 的 Type 為 `PriorityLevel`，並定義了 5 種優先級，分別是：
+
+```tsx
+export type PriorityLevel = 0 | 1 | 2 | 3 | 4 | 5;
+
+module.exports = {
+  NoWork: 0, // No work is pending.
+  SynchronousPriority: 1, // For controlled text inputs. Synchronous side-effects.
+  TaskPriority: 2, // Completes at the end of the current tick.
+  HighPriority: 3, // Interaction that needs to complete pretty soon to feel responsive.
+  LowPriority: 4, // Data fetching, or result from updating stores.
+  OffscreenPriority: 5, // Won't be visible but do the work in case it becomes visible.
+};
+```
+
+我們可以看到
+
+- `SynchronousPriority`：同步的優先級，用於控制文字輸入等同步的 side-effects，為最高的優先級
+- `TaskPriority`：在當前 <a href="https://github.com/getify/You-Dont-Know-JS/blob/1st-ed/async%20%26%20performance/ch1.md#:~:text=each%20iteration%20of%20this%20loop%20is%20called%20a%20%22tick.%22">tick （也就是每一次 Event Loop 的循環)</a> 結束時完成的優先級，為第二高的優先級
+- `HighPriority`：用於需要快速響應的交互，例如點擊、輸入等，為第三高的優先級
+- `LowPriority`：用於數據獲取或更新 store 等，為第四高的優先級
+- `OffscreenPriority`：不會顯示在畫面上的 Task，用於不會立即顯示但可能在顯示時需要完成的工作，為最低的優先級
+
+<br /><br />
+
+對於優先順序大於 `TaskPriority`（也就是 `PriorityLevel > 2`） 的更新，React 會使用 <a href="https://github.com/facebook/react/blob/5c6ef4044610a2a325780261f41730a33a919f98/src/renderers/shared/fiber/ReactFiberScheduler.js#L1073">`scheduleDeferredCallback`</a> 來處理，
+
+```tsx
+if (nextPriorityLevel > TaskPriority && !isCallbackScheduled) {
+    scheduleDeferredCallback(performDeferredWork);
+    isCallbackScheduled = true;
+}
+```
+
+<br /><br />
+
+而 <a href="https://github.com/facebook/react/blob/5c6ef4044610a2a325780261f41730a33a919f98/src/renderers/dom/fiber/ReactDOMFiberEntry.js#L548"> `scheduleDeferredCallback` 就是使用了 `requestIdleCallback`</a>，來達到在瀏覽器每幀渲染的空閑時間中執行，使畫面不會卡頓
+
+<br /><br />
+
+:::info `requestAnimationFrame` Task
+雖然在 v16 中，React 已經不再使用 `requestAnimationFrame` 來處理動畫相關的更新，但在比 v16 更早的版本中，React 也有使用 `requestAnimationFrame` 來處理動畫相關的更新，(<a href="https://github.com/facebook/react/blob/ab02a03cad1afcecfdb88bc4b1013b46bc51dff2/src/renderers/dom/fiber/ReactDOMFiber.js#L111">source code</a>)
+
+後續在 Concurrent 功能出來後，React 也有恢復使用 `requestAnimationFrame` 來實現 Concurrent features
+:::
+
+<br /><br />
+
+### `pendingProps`, `memoizedProps`
+
+這兩個屬性，主要是要當前 & 要更新的 props，用來決定 Fiber node 是否需要更新
+
+- `pendingProps`：當前 Fiber node 準備更新的 props
+- `memoizedProps`：當前 Fiber node 的 props
+
+<br />
+
+例如在 <a href="https://github.com/facebook/react/blob/5c6ef4044610a2a325780261f41730a33a919f98/src/renderers/shared/fiber/ReactFiberBeginWork.js#L184">`ReactFiberBeginWork.js` 中的 `updateFunctionalComponent` 函式</a>中，
+可以看到 `pendingProps` 和 `memoizedProps` 的用途：
+
+> 當我們發現 `pendingProps` 和 `memoizedProps` 相同時，我們可以跳過更新，直接 clone child fiber nodes
+
+```tsx
+function updateFunctionalComponent(current, workInProgress) {
+    var fn = workInProgress.type;
+    var nextProps = workInProgress.pendingProps;
+
+    const memoizedProps = workInProgress.memoizedProps;
+    if (hasContextChanged()) {
+      // Normally we can bail out on props equality but if context has changed
+      // we don't do the bailout and we have to reuse existing props instead.
+      if (nextProps === null) {
+        nextProps = memoizedProps;
+      }
+    } else {
+      // highlight-start
+      if (nextProps === null || memoizedProps === nextProps) {
+        return bailoutOnAlreadyFinishedWork(current, workInProgress);
+      }
+      // highlight-end
+      // TODO: consider bringing fn.shouldComponentUpdate() back.
+      // It used to be here.
+    }
+
+    var unmaskedContext = getUnmaskedContext(workInProgress);
+    var context = getMaskedContext(workInProgress, unmaskedContext);
+
+    var nextChildren;
+
+    if (__DEV__) {
+      ReactCurrentOwner.current = workInProgress;
+      ReactDebugCurrentFiber.setCurrentFiber(workInProgress, 'render');
+      nextChildren = fn(nextProps, context);
+      ReactDebugCurrentFiber.setCurrentFiber(workInProgress, null);
+    } else {
+      nextChildren = fn(nextProps, context);
+    }
+    // React DevTools reads this flag.
+    workInProgress.effectTag |= PerformedWork;
+    reconcileChildren(current, workInProgress, nextChildren);
+    memoizeProps(workInProgress, nextProps);
+    return workInProgress.child;
+  }
+
+  ...
+
+// highlight-start
+function bailoutOnAlreadyFinishedWork(
+// highlight-end
+    current,
+    workInProgress: Fiber,
+): Fiber | null {
+    if (__DEV__) {
+      cancelWorkTimer(workInProgress);
+    }
+
+    // TODO: We should ideally be able to bail out early if the children have no
+    // more work to do. However, since we don't have a separation of this
+    // Fiber's priority and its children yet - we don't know without doing lots
+    // of the same work we do anyway. Once we have that separation we can just
+    // bail out here if the children has no more work at this priority level.
+    // if (workInProgress.priorityOfChildren <= priorityLevel) {
+    //   // If there are side-effects in these children that have not yet been
+    //   // committed we need to ensure that they get properly transferred up.
+    //   if (current && current.child !== workInProgress.child) {
+    //     reuseChildrenEffects(workInProgress, child);
+    //   }
+    //   return null;
+    // }
+
+    // highlight-start
+    cloneChildFibers(current, workInProgress);
+    // highlight-end
+    return workInProgress.child;
+}
+```
+
+<br /><br />
+
+### `alternate`
+
+`alternate` 讓 React 可以實現 reconcilation 的機制，對於 workInProgress tree，我們可以指向 current tree 的每一個 Fiber node，以決定是否可以復用舊的
+
+
+<br /><br />
+
+
+
+## 結論
+- React Fiber 的底層會有兩個 tree data structure，分別是 current tree 和 workInProgress tree
+- React Work Loop 是 Fiber 底層遍歷所有 Fiber node 的過程，會呼叫 `beginWork` 和 `completeWork` 函式，生成或更新 Fiber node
+- Fiber node 的結構中包含以下屬性
+    - `tag`：用於內部區分 Fiber node 的類型，決定要怎麼處理此類型的 Fiber node，例如 `ClassComponent` 和 `FunctionalComponent` 的處理方式就不太一樣
+    - `key` 和 `type`：用於識別 Fiber node 跟舊的 Fiber node 是否相同
+    - `child`, `sibling`, `return`：用於決定每個 Fiber node 的遍歷順序
+    - `pendingWorkPriority`：用於定義 Fiber node 的優先級，次要的會用 `requestIdleCallback` 來處理，避免阻塞主執行緒
+    - `pendingProps` 和 `memoizedProps`：用於決定 Fiber node 是否需要更新
+    - `alternate`：用於實現 reconcilation 的機制
+
+
+<br /><br /><br />
+
+### 參考資料
+
+- [What Is React Fiber? React.js Deep Dive #2](https://www.youtube.com/watch?v=0ympFIwQFJw)
+- [React v16.0 source code](https://github.com/facebook/react/tree/v16.0.0)
+- [Vercel & ex-React Core Team member - Andrew Clark - React Fiber Architecture](https://github.com/acdlite/react-fiber-architecture)
+
+
+<br /><br /><br />
+
