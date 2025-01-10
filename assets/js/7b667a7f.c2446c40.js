@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkbenson_doc=self.webpackChunkbenson_doc||[]).push([[5649],{5274:e=>{e.exports=JSON.parse('{"label":"Git","permalink":"/docs/tags/git","allTagsPath":"/docs/tags","count":1,"items":[{"id":"Code/git-merging-strategies","title":"[Git] Git \u5408\u4f75\u7b56\u7565","description":"\u524d\u8a00","permalink":"/docs/Code/git-merging-strategies"}]}')}}]);
