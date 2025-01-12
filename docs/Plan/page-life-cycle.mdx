@@ -1,0 +1,215 @@
+---
+sidebar_position: 1
+sidebar_label: '[Browser] The relationship between Page Life Cycle & Critical Rendering Path'
+title: '[Browser] The relationship between Page Life Cycle & Critical Rendering Path'
+tags:
+  - Critical Rendering Path
+  - Browser
+---
+
+## Background
+
+Since knowledge of the browser's lifecycle and processes is scattered, especially in the Page Life Cycle and Critical Rendering Path, I decided to organize the information to clarify the entire timeline of these two processes.
+
+<br />
+
+## Critical Rendering Path
+
+<img
+    src="/img/critical-rendering-path.jpg"
+    alt="Critical Rendering Path"
+    width="70%"
+/>
+
+**1. Construction of the DOM Tree**
+
+- The browser parses the HTML line by line to construct the DOM Tree.
+- If JavaScript modifies the DOM, it affects the final structure of the DOM Tree.
+
+<br />
+
+**2. Construction of the CSSOM Tree**
+
+- When encountering `<link>` or `<style>`, the browser begins downloading and parsing CSS files to construct the CSSOM Tree.
+- The construction of the CSSOM Tree and DOM Tree happens in parallel.
+
+<br />
+
+**3. Construction of the Render Tree**
+
+- Combining DOM Tree and CSSOM Tree:
+- The browser combines both to generate the Render Tree, which only contains visible elements needed for rendering.
+
+Note:
+If the CSSOM Tree is not yet complete, the construction of the Render Tree will be blocked.
+
+<br />
+
+**4. Layout**
+
+- The browser calculates the position and size of each element based on the Render Tree, like drawing a building block on the web page.
+
+<br />
+
+**5. Paint**
+
+- Painting the content and styles (e.g. color, font style) of the elements onto each building block of the layout.
+
+<br />
+
+**6. Composite**
+
+- The browser composites the painted layers to display the final webpage, similar to concepts in Photoshop and Illustrator where overlapping layers combine to form a complete picture.
+
+<br />
+
+## Page Life Cycle
+
+The Page Life Cycle represents the series of phases a webpage undergoes from its initial loading in the browser to its eventual closure. Each stage in this cycle triggers specific events, enabling developers to interact with the page during its different states.
+
+We can see all these events in the following example: 
+
+```html
+<script>
+  log('initial readyState:' + document.readyState);
+
+  document.addEventListener('readystatechange', () => log('readyState:' + document.readyState));
+  document.addEventListener('DOMContentLoaded', () => log('DOMContentLoaded'));
+
+  window.onload = () => log('window onload');
+</script>
+
+<iframe src="iframe.html" onload="log('iframe onload')"></iframe>
+
+<img src="https://en.js.cx/clipart/train.gif" id="img">
+<script>
+  img.onload = () => log('img onload');
+
+  window.addEventListener("beforeunload", function() {
+    console.log('beforeunload');
+  });
+
+  window.addEventListener("unload", function() {
+    console.log('unload');
+  });
+</script>
+
+// [1] initial readyState:loading
+// [2] readyState:interactive
+// [2] DOMContentLoaded
+// [3] iframe onload
+// [4] img onload
+// [4] readyState:complete
+// [4] window onload
+// [5] beforeunload
+// [6] unload
+```
+
+<br />
+
+**1. `document.readyState: loading`**
+
+- **Initial Stage**: When the browser receives the first byte of the HTML response, document.readyState is immediately set to loading.
+
+- **Parsing Process**:
+    - The browser begins parsing the HTML and incrementally builds the DOM Tree.
+
+    - When encountering external resources (like CSS and JavaScript), the browser sends requests to download these resources.
+    
+    - If a JavaScript file is encountered, it might pause the parsing of the DOM Tree, depending on the script's loading mode (normal, defer, or async).
+
+<br />
+
+**2. `document.readyState: interactive (DOM Content Loaded)`**
+
+- **Completion of DOM Tree Construction**:
+    - When the HTML parsing is fully complete, readyState changes to interactive.
+
+- **Triggering the DOMContentLoaded Event**:
+    - At this point, the DOM structure is available, and developers can start interacting with it.
+
+<br />
+
+**3. `DOMContentLoaded`**
+
+- Basically, it means the same as `document.readyState: interactive`.
+- But it is triggered after `document.readyState: interactive`.
+
+<br />
+
+:::note
+At this stage, not all resources, such as images and iframes, may be fully loaded.
+:::
+
+<br /><br /><br />
+
+**3. `document.readyState: complete`**
+
+- **Completion of All Resource Loading**:
+    - When all resources on the page (including images, CSS, iframes, etc.) are fully loaded, document.readyState changes to complete.
+
+- **Triggering the load Event**:
+    - This indicates that the page has fully loaded.
+
+<br />
+
+4. `window.onload`:
+    - Fired after readyState: complete, usually used to execute code that depends on all resources being loaded.
+
+5. `window.onbeforeunload`:
+    - Used to prompt the user to confirm before leaving the page (e.g., when form data is unsaved).
+
+6. `window.onunload`:
+    - Fired when the page is about to unload, typically used to clean up resources.
+
+<br />
+
+## Critical Rendering Path & Page Life Cycle
+
+Following is the relationship and timeline between the Page Life Cycle and Critical Rendering Path.
+
+<img
+    src="/img/page-life-cycle-with-critical-rendering-path.jpg"
+    alt="Page Life Cycle with Critical Rendering Path"
+    width="100%"
+/>
+
+
+Here are some key overlaps:
+
+1. **`document.readyState: loading` & Parsing HTML**
+    - When the new window is opened, document.readyState is immediately set to loading, and then the browser receives the first byte of the HTML response.
+
+<br />
+
+2. **DOM tree construction** & **`document.readyState: interactive`, `DOMContentLoaded`**
+    - After the DOM tree construction is complete, `document.readyState: interactive` is triggered, then the `DOMContentLoaded`, these 2 events both represent the completion of the DOM tree construction completion.
+
+<br />
+
+3. **Composite phase** & **`document.readyState: complete`, `window.onload`**
+    - After the Composite phase is complete, and the web page is fully rendered, `document.readyState: complete` will be triggered, then the `window.onload`, these 2 events both represent the completion of the Composite phase.
+    
+
+<br /><br />
+
+## Summary
+1. **Page Life Cycle**: Represents each stage of the web page, each stage of the Page life cycle will trigger the corresponding event.
+
+2. **Critical Rendering Path**: Represents how the browser renders the page.
+
+3. **Page Life Cycle & Critical Rendering Path overlaps**:
+    1. **Start**: when new window is opened, **`document.readyState: loading` is triggered, then starts parsing HTML**
+    2. **DOM finished**: after DOM tree construction is complete, **`document.readyState: interactive` is triggered, then `DOMContentLoaded`**
+    3. **Render finished**: after Composite phase is complete, **`document.readyState: complete` is triggered, then `window.onload`**
+
+<br /><br />
+
+### References
+
+- [Understanding the Critical Path](https://web.dev/learn/performance/understanding-the-critical-path)
+- [onload vs onDOMContentLoaded](https://javascript.info/onload-ondomcontentloaded)
+- [HTML Scripting](https://html.spec.whatwg.org/multipage/scripting.html)
+- [DOMContentLoaded vs load vs beforeunload vs unload](https://www.explainthis.io/zh-hant/swe/fe-DOMContentLoaded-load-beforeunload-unload-difference)
+
+<br /><br /><br />
