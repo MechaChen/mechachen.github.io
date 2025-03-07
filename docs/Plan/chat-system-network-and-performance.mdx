@@ -1,0 +1,18 @@
+---
+sidebar_label: '[Chat System] Network and Performance'
+title: '[Chat System] Network and Performance'
+tags:
+  - Chat System
+  - Architecture
+---
+
+- Network:
+  - SSE to push room and last message
+  - Share Connection Across Multiple Tabs: SharedWorker
+  - Heartbeat to disconnect inactive connection
+  - WebP / AVIF to reduce image size, good for preview but not good for download and following editing
+- Performance:
+  - Add Message Status, Support Optimistic Update and Failed Message Retry: Map Data Structure + IndexedDB
+  - Virtual List to render message
+  - Lazy Loading to render e.g. emoji picker, any popovers/modals
+  - Cursor based optimization to load more messages
