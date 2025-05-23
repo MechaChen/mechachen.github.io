@@ -147,9 +147,68 @@ type Message = {
     content: string,
     senderId: string,
     createdAt: Date,
+    status: 'in-flight' | 'success' | 'failed',
+}
+
+type DraftMessage = {
+    userIdAndRoomId: string,
+    message: string,
+    fileList?: File[],
 }
 ```
+
 
 <br />
 
 ## Interface
+
+
+
+Chat room inputs:
+
+```tsx
+HTTP: 
+- GET /users
+(- POST /rooms) 
+// there are 2 options, 
+// 1. create room by HTTP request and get real time new room by SSE
+// 2. create room and get real time new room list by WebSocket if with Serverless architecture
+
+WebSocket:
+- actions: create_room
+```
+
+<br />
+
+User room lists:
+
+```tsx
+HTTP:
+GET /rooms
+
+WebSocket:
+- listen actions: create_room
+
+(SSE:
+- listen actions: create_room
+)
+```
+
+<br />
+
+Chat room:
+
+```tsx
+HTTP:
+- POST /rooms/:roomId/messages
+
+WebSocket:
+- actions:
+    - create_connection
+    - create_message
+    - delete_connection
+- listen actions:
+    - create_message
+```
+
+
