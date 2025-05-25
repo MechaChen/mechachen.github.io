@@ -1,0 +1,165 @@
+---
+sidebar_position: 2.1
+sidebar_label: '[Google Docs] Architecture - Conflict Resolution'
+title: '[Google Docs] Architecture - Conflict Resolution'
+tags:
+  - System Design
+  - Conflict Resolution
+---
+
+## Why Conflict Resolution matters in collaborative editing?
+
+Imagine Alice and Bob are editing the same document at the same time.
+
+Original document: `ABCDE`
+- Alice deletes `D`
+- Bob deletes `B`
+
+As our expected, the client and server should handle the conflict correctly to `ACE`.
+
+But network latency is unpredictable, there might be 2 scenarios:
+1. Alice's operation is applied first
+2. Bob's operation is applied first
+
+<br />
+
+<img src="/img/editing-conflict.png" alt="Editing Conflict" />
+
+<br /><br />
+
+### Scenario 1: Alice changes applied first
+1. Server receives Alice's operation: `DEL 03`, and server's state `ABCDE` -> `ABCE`,
+and server passed the `DEL 03` to both Alice and Bob.
+   1. Alice receive own operation: no change
+   2. Bob receive Alice's operation: `DEL 03`, and Bob's state `ACDE` -> `ACD` ⚠️
+2. Server receives Bob's operation: `DEL 01`, and server's state `ABCE` -> `ACE`
+   1. Alice receive operation: `DEL 01`, and Alice's state `ABCE` -> `ACE`
+   2. Bob receive own operation: no change
+
+### Scenario 2: Bob changes applied first
+1. Server receives Bob's operation: `DEL 01`, and server's state `ABCDE` -> `ACDE`,
+and server passed the `DEL 01` to both Alice and Bob.
+   1. Alice receive Bob's operation: `DEL 01`, and Alice's state `ABCE` -> `ACE`
+   2. Bob receive own operation: no change
+2. Server receives Alice's operation: `DEL 03`, and server's state `ACDE` -> `ACD` ⚠️
+   1. Alice receive own operation: no change
+   2. Bob receive Alice's operation: `DEL 03`, and Bob's state `ACDE` -> `ACD` ⚠️
+
+<br /><br />
+
+The result due to Alice or Bob changes applied first is different, that's not what we want.
+
+Therefore, we need **Conflict Resolution** mechanism to handle the conflict correctly.
+
+And there are 2 main approaches to handle the conflict:
+1. Operational Transformation (OT)
+2. Conflict Resolution Data Structure (CRDT)
+
+<br />
+
+## Who is using OT & CRDT?
+
+| Technology | Product / Company |
+|------------|------------------|
+| OT | <li>Google Docs</li><li>Etherpad</li><li>Apache Wave</li> |
+| CRDT | <li>[Figma](https://www.figma.com/blog/how-figmas-multiplayer-technology-works/)</li><li>Yjs</li><li>[Evernote](https://evernote.com/blog/future-proofing-evernotes-foundations)</li><li>[Zed](https://zed.dev/blog/crdts)</li> |
+
+<br /><br />
+
+## Operational Transformation (OT)
+
+Operational Transformation (OT) is a conflict resolution technique that transforms user's operations to maintain consistency while preserving user intentions.
+
+<br />
+
+### How it works?
+
+The Server utilizes OT and according to user's current state and intention, transforms operations to make all users state consistent and correct.
+
+<br />
+
+Follow by the Alice's and Bob's example:
+
+<img src="/img/editing-conflict-resolution.png" alt="Editing Conflict Resolution OT" />
+
+### Scenario 1: Alice changes applied first
+1. Server receives Alice's operation: `DEL 03`, and server's state `ABCDE` -> `ABCE`,
+and server passed the `DEL 03` to both Alice and Bob.
+   1. Alice receive own operation: no change
+   2. Before sending to Bob, server transforms Alice's operation to `DEL 03` -> `DEL 02`<br />
+   Bob receive Alice's operation: `DEL 02`, and Bob's state `ACDE` -> `ACE` ✅
+2. Server receives Bob's operation: `DEL 01`, and server's state `ABCE` -> `ACE`
+   1. Alice receive operation: `DEL 01`, and Alice's state `ABCE` -> `ACE`
+   2. Bob receive own operation: no change
+
+### Scenario 2: Bob changes applied first
+1. Server receives Bob's operation: `DEL 01`, and server's state `ABCDE` -> `ACDE`,
+and server passed the `DEL 01` to both Alice and Bob.
+   1. Alice receive Bob's operation: `DEL 01`, and Alice's state `ABCE` -> `ACE`
+   2. Bob receive own operation: no change
+2. Server receives Alice's operation: `DEL 03`, before updating Server's state,
+server transforms Alice's operation to `DEL 03` -> `DEL 02`, and update Server's state to `ACE` ✅<br />
+   1. Alice receive own operation: no change
+   2. Bob receive Alice's operation: `DEL 02`, and Bob's state `ACDE` -> `ACE` ✅
+
+<br />
+
+### Pros and Cons
+
+| Features | Rating |
+|------|------|
+| Consistency | 🟢 |
+| Memory usage | 🟢 |
+| User intent preservation | 🟢 |
+| Implementation effort | 🔴 |
+| Peer to Peer (WebRTC) support | 🔴 |
+
+
+
+<br /><br />
+
+## Conflict Resolution Data Structure (CRDT)
+
+### What is CRDT?
+- Definition and basic concepts
+- How it works
+
+### Scalability & Performance
+
+### Pros and Cons
+- Advantages
+- Disadvantages
+
+### Use Cases
+- Figma
+- Yjs
+- Evernote
+
+
+## Comparison
+
+### Technical Comparison
+- Consistency model
+- Performance characteristics
+- Memory usage
+- Implementation complexity
+- Scalability
+
+### Business Considerations
+- Development cost
+- Maintenance overhead
+- User experience
+- Feature support
+
+### Performance Optimization
+
+## Conclusion: Which one to use?
+
+
+## References
+
+
+
+
+
+<br />

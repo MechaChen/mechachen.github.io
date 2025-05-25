@@ -1,0 +1,217 @@
+---
+sidebar_position: 2.2
+sidebar_label: '[Google Docs] Optimization - Undo/Redo'
+title: '[Google Docs] Optimization - Undo/Redo'
+tags:
+  - System Design
+  - Optimization
+  - Undo/Redo
+---
+
+:::note source code
+https://github.com/MechaChen/undo-manager-lite
+:::
+
+<br />
+
+## Undo/Redo demo
+
+<div style={{
+  position: 'relative',
+  width: '100%',
+  maxWidth: '700px',
+  margin: '0 auto'
+}}>
+  <video
+    controls
+    style={{
+      width: '100%',
+      height: 'auto',
+      display: 'block'
+    }}
+    src="https://github.com/user-attachments/assets/14d5548e-5ea5-42e0-b016-673fa6729107"
+    alt="Undo/Redo Optimization"
+  />
+</div>
+
+<br />
+<br />
+<br />
+
+
+There are 2 ways to implement undo/redo mechanism:
+1. single undo stack and move by index ([./src/hooks/useUndoRedoByIndex.ts](https://github.com/MechaChen/undo-manager-lite/blob/main/src/hooks/useUndoRedoByIndex.ts))
+2. 2 stacks - undo stack & redo stack ([./src/hooks/useUndoRedoByTwoStack.ts](https://github.com/MechaChen/undo-manager-lite/blob/main/src/hooks/useUndoRedoByTwoStack.ts))
+
+<br />
+
+## Single undo stack and move by index
+Use a single stack to store the user's operation history, and
+- when user undo, move index backward (-1)
+- when user redo, move index forward (+1)
+
+```typescript
+const undo = () => {
+    const prevStep = Math.max(LOWER_BOUND, currentIndex - 1);
+    setCurrentIndex(prevStep);
+}
+
+const redo = () => {
+    const nextStep = Math.min(UPPER_BOUND, currentIndex + 1);
+    setCurrentIndex(nextStep);
+}
+```
+
+<br />
+
+## 2 Stacks - undo stack & redo stack
+Use 2 stacks to store the undo and redo histories
+- when user undo
+  1. `pop` current state from undo stack
+  2. `push` current state to redo stack
+  3. get the latest previous state from the last item in the undo stack
+  4. set state with the latest previous version
+
+```typescript
+const undo = () => {
+    if (undoStack.current.length <= 1) {
+        return;
+    }
+
+    const currentValue = undoStack.current.pop();
+    const prevValue = undoStack.current[undoStack.current.length - 1];
+    redoStack.current.push(currentValue!);
+    setValue(prevValue);
+}
+```
+
+<br />
+
+- when user redo
+  1. `pop` next state from redo stack
+  2. `push` redo state to undo stack
+  3. set state with next version
+
+```typescript
+const redo = () => {
+    if (redoStack.current.length === 0) {
+        return;
+    }
+
+    const nextStep = redoStack.current.pop();
+    undoStack.current.push(value);
+    setValue(nextStep!);
+}
+```
+ 
+<br />
+
+ 
+## Comparison
+
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>by index</th>
+      <th>🏆 by 2 stacks</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Implementation</td>
+      <td>Single array + index</td>
+      <td>Two stacks (undo/redo)</td>
+    </tr>
+    <tr>
+      <td>Memory Usage</td>
+      <td>✅ Less (single array)</td>
+      <td>⚠️ More (two arrays)</td>
+    </tr>
+    <tr>
+      <td>Code Complexity</td>
+      <td>⚠️ Complex (index management)</td>
+      <td>✅ Simple (intuitive push/pop)</td>
+    </tr>
+    <tr>
+      <td>Error Risk</td>
+      <td>⚠️ High (index out of bounds)</td>
+      <td>✅ Low (no index management)</td>
+    </tr>
+    <tr>
+      <td>Extensibility</td>
+      <td>⚠️ Difficult (complex index logic)</td>
+      <td>✅ Easy (simple to add features)</td>
+    </tr>
+    <tr>
+      <td>Performance</td>
+      <td>✅ Better (fewer slice operations)</td>
+      <td>⚠️ Worse (maintain two arrays)</td>
+    </tr>
+    <tr>
+      <td>Readability</td>
+      <td>⚠️ Poor (need to understand index logic)</td>
+      <td>✅ Good (clear semantics)</td>
+    </tr>
+    <tr>
+      <td>Maintainability</td>
+      <td>⚠️ Poor (prone to bugs)</td>
+      <td>✅ Good (clear logic)</td>
+    </tr>
+    <tr>
+      <td>Used by</td>
+      <td>
+        <ul>
+          <li>Google Docs (early version)</li>
+          <li>Microsoft Word (early version)</li>
+          <li>Adobe Photoshop (early version)</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/facebook/lexical/blob/main/packages/lexical-history/src/index.ts">Lexical</a></li>
+          <li><a href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/UndoArchitecture/Articles/RegisteringUndo.html#//apple_ref/doc/uid/20000206-SW2">NSUndo manager</a> (iOS, macOS standard)</li>
+          <li>VS Code</li>
+          <li>Sublime Text</li>
+          <li>Atom</li>
+          <li>Google Docs (current version)</li>
+          <li>Microsoft Word (current version)</li>
+          <li>Adobe Photoshop (current version)</li>
+          <li>Figma</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
+
+## Optimization
+To prevent memory leak, we can setup undo stack size limit, and when new operation come in, 
+which makes the stack exceed the limit, slice the stack by size of (current stack size - limit)
+
+```typescript
+const push = (value: T) => {
+    let newUndoStack = undoStack.current.slice(0, currentIndex + 1);
+    newUndoStack.push(value);
+
+    // highlight-start
+    if (undoStack.current.length > limit) {
+        newUndoStack = newUndoStack.slice(undoStack.current.length - limit);
+    }
+    // highlight-end
+    undoStack.current = newUndoStack;
+    setCurrentIndex(newUndoStack.length - 1);
+}
+```
+
+<br />
+<br />
+
+## References
+- [Lexical History plugin source code](https://github.com/facebook/lexical/blob/main/packages/lexical-history/src/index.ts)
+- [UI Algorithms: A Tiny Undo Stack](https://blog.julik.nl/2025/03/a-tiny-undo-stack)
+- [Build an Undo-Redo Hook in React with Keyboard Shortcut Support: Step-by-Step Tutorial](https://www.youtube.com/watch?v=pR1r-1KGtNU)
+
+
+<br /><br />

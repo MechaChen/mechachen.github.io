@@ -12,7 +12,7 @@ const config = {
   themes: ['@docusaurus/theme-mermaid'],
   title: 'Benson',
   tagline: 'Dinosaurs are cool',
-  url: 'https://mechachen.github.io',
+  url: 'https://benson-chen.co',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
