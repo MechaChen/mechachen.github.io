@@ -1,0 +1,96 @@
+---
+sidebar_position: 2.1
+sidebar_label: '[Google Docs] Architecture - Network'
+title: '[Google Docs] Architecture - Network'
+tags:
+  - System Design
+  - Architecture
+---
+
+## Network
+
+For collaborative editing, we need to support real-time communication between users.
+
+There are 2 main ways to support real-time communication:
+
+1. Client-Server Model (WebSocket)
+2. Peer-to-Peer (WebRTC)
+
+<br /><br />
+
+## Client-Server Model (WebSocket)
+
+
+<img src="/img/websocket.png" width="450" alt="WebSocket" />
+
+<br /><br />
+
+The client server model is that we use a central server (or multiple servers) to handle all connections and collaborative behaviors.
+
+
+<br />
+
+### Pros and Cons
+
+| Features | Rating | Description |
+|------|:------:|------|
+| Centralized source of truth | 🟢 | All users have the same document from single source |
+| Scalability | 🟢 | Event hard to load balancing for Servers, comparing to peer-to-peer, only Server need to handle all connections |
+| Implementation | 🟢 | Comparing to peer-to-peer, the concept is simpler |
+| Single point of failure | 🔴 | Once server is down, all users cannot collaborate |
+| Cost | 🔴 | We need a long live server to handle all connections, which is hard to maintain |
+| Speed | 🔴 | Comparing to peer-to-peer, we need to go through server, which increase a network path |
+
+<br /><br /><br />
+
+## Peer-to-Peer (WebRTC)
+
+
+<img src="/img/peer-to-peer.png" width="450" alt="Peer to Peer" />
+
+<br /><br />
+
+The peer-to-peer model is that only rely on clients themselves to handle all connections and collaborative behaviors.
+
+<br />
+
+### Pros and Cons
+
+| Features | Rating | Description |
+|------|:------:|------|
+| Single point of failure | 🟢 | Even if any client is down, the other clients can still collaborate |
+| Cost | 🟢 | We don't need a long live server to handle all connections, only rely on clients themselves |
+| Speed | 🟢 | We can directly communicate with each client |
+| Centralized source of truth | 🔴 | There is no centralized source of truth, each client is the authority |
+| Scalability | 🔴 | When clients increase, every client have to handle more connections, which become a complex mesh |
+| Implementation | 🔴 | The concept and implementation of peer-to-peer is way more complex than client-server model |
+
+
+<br /><br />
+
+## Conclusion : Which one to use?
+
+Here are the pros and cons of each model:
+
+| Features | 🏆 Client-Server Model | Peer-to-Peer Model |
+|------|:------:|:------:|
+| Single point of failure | 🔴 | 🟢 |
+| Cost | 🔴 | 🟢 |
+| Speed | 🔴 | 🟢 |
+| Centralized source of truth ⭐️⭐️⭐️ | 🟢 | 🔴 |
+| Scalability | 🟢 | 🔴 |
+| Implementation | 🟢 | 🔴 |
+
+
+<br /><br />
+
+Since what document value is document's correctness, which can be achieved by centralized source of truth on server.
+And Client-Server Model is easier to scale, **🏆 Client-Server Model will be our choice**.
+
+<br /><br />
+
+## Reference
+- GreatFrontend - Google Docs
+- [Hussein Nasser - Backend Communication Design Patterns - WebRTC](https://www.udemy.com/course/fundamentals-of-backend-communications-and-protocols/learn/lecture/34630282#overview)
+
+<br /><br />
