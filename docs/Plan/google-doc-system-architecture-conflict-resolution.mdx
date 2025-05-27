@@ -106,13 +106,13 @@ server transforms Alice's operation to `DEL 03` -> `DEL 02`, and update Server's
 
 ### Pros and Cons
 
-| Features | Rating |
-|------|:------:|
-| Consistency | ✅ |
-| Memory Usage | ✅ (Low) |
-| User Intent Preservation | ✅ |
-| Implementation Effort | ❌ (Complex) |
-| Peer-to-Peer Support | ❌ |
+| Features | OT | CRDT |
+|------|:------:|:------:|
+| Consistency | ✅ | ✅ |
+| Memory Usage | ✅ (Low) | ❌ (High) |
+| User Intent Preservation | ✅ | ❌ |
+| Implementation Effort | ❌ (Complex) | ✅ (Simple) |
+| Peer-to-Peer Support | ❌ | ✅ |
 
 <br /><br />
 
@@ -289,10 +289,13 @@ Which will lead to `ACE`
 ### Technical Comparison
 
 #### Operational Transformation (OT)
-| Tech | Consistency | Memory Usage | User Intent Preservation | Implementation Effort | Peer-to-Peer Support |
-|------|:------:|:------:|:------:|:------:|:------:|
-| OT | ✅ | ✅ (Low) | ✅ | ❌ (Complex) | ❌ |
-| CRDT | ✅ | ❌ (High) | ❌ | ✅ (Simple) | ✅ |
+| Features | OT | CRDT |
+|------|:------:|:------:|
+| Consistency | ✅ | ✅ |
+| Memory Usage | ✅ (Low) | ❌ (High) |
+| User Intent Preservation | ✅ | ❌ |
+| Implementation Effort | ❌ (Complex) | ✅ (Simple) |
+| Peer-to-Peer Support | ❌ | ✅ |
 
 
 <br />
