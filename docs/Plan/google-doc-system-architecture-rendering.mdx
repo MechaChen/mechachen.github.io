@@ -1,0 +1,180 @@
+---
+sidebar_position: 2.1
+sidebar_label: '[Google Docs] Architecture - Rendering'
+title: '[Google Docs] Architecture - Rendering'
+tags:
+  - System Design
+  - Rendering
+---
+
+## Why Rendering matters in collaborative editing?
+
+
+There are some solutions to render the document:
+1. Form elements like input, textarea, etc.
+2. DOM with fake cursors
+3. `contenteditable`
+4. Canvas rendering
+
+<br /><br />
+
+
+## 1. Form elements like input, textarea, etc.
+
+Definitely not an option, because it's can not format any text.
+
+
+<br /><br />
+
+## 2. DOM with fake cursors
+
+We can use HTML tag like `<b>` or `<i>` and styles to format the text
+
+But it's not a good solution, because we have to **calculate the cursors position by ourselves**.
+
+<img src="/img/editor-cursor.png" alt="Editor Cursor" />
+
+For example, when we
+1. Typing `Hello`, the cursor should go right accordingly.
+2. Hit `Enter`, the cursor should go to the next line.
+
+All these cursor animation we have to calculate by ourselves, which is hard to implement.
+
+<br /><br />
+
+
+## 3. `contenteditable`
+
+[`contenteditable`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/contenteditable) is a HTML attribute, which makes any element can behave like a text editor, which supports
+1. Basic formatting like bold, italic, underline, etc.
+2. Cursor movement
+3. Selection
+4. Copy and paste
+5. Undo and redo
+6. etc.
+
+<br /><br />
+
+But there still some problems:
+- Limited formatting, only support what we mentioned above.
+- Different browsers have different implementations, which makes the behavior inconsistent.
+
+
+| Issue Type                          | Browser Differences                                                                                  |
+|--------------------------------------|-----------------------------------------------------------------------------------------------------|
+| Enter key behavior                   | Some generate `<div>`, others `<p>` (Chrome vs Firefox)                                             |
+| Backspace deleting empty elements    | Some retain empty nodes halfway, others clear them directly (Safari is especially odd)              |
+| Paste behavior                       | Some paste as plain text, some include formatting, some even include `<style>` tags (Edge vs Chrome differences) |
+
+- Have XSS vulnerability due to content is HTML
+
+
+
+<br /><br />
+
+
+## 4. Canvas rendering
+
+The most advanced solution is to use canvas to render the document, it has the **best performance**, 
+but what it takes is that implementation is **even harder than DOM with fake cursors approach**.
+
+| Pros           | Cons                                                      |
+|----------------|------------------------------------------------------------------|
+| ✅ Best performance, no DOM operations, no layout, no reflow, no repaint, which increase 5 ~ 45 times | ❌ Need to calculate text, cursor, and more position from scratch |
+| ✅ No misaligned issue     | ❌ Need to implement all accessibility from scratch  |
+| ✅ No cross-browser issue     | ❌ Need to implement all accessibility from scratch  |
+
+
+<br /><br />
+
+
+## Comparison
+
+<table>
+  <thead>
+    <tr>
+      <th>Solution</th>
+      <th>Form elements like input, textarea, etc.</th>
+      <th>DOM with fake cursors</th>
+      <th>🏆 <code>contenteditable</code></th>
+      <th>Canvas rendering</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Performance</td>
+      <td align="center">🟡</td>
+      <td align="center">🟡</td>
+      <td align="center">🟡</td>
+      <td align="center">✅</td>
+    </tr>
+    <tr>
+      <td>Text Alignment</td>
+      <td align="center">🟡</td>
+      <td align="center">🟡</td>
+      <td align="center">🟡</td>
+      <td align="center">✅</td>
+    </tr>
+    <tr>
+      <td>Cross-browser</td>
+      <td align="center">❌</td>
+      <td align="center">❌</td>
+      <td align="center">❌</td>
+      <td align="center">✅</td>
+    </tr>
+    <tr>
+      <td>Accessibility</td>
+      <td align="center">✅</td>
+      <td align="center">✅</td>
+      <td align="center">✅</td>
+      <td align="center">❌</td>
+    </tr>
+    <tr>
+      <td>Implementation effort</td>
+      <td align="center">✅</td>
+      <td align="center">❌</td>
+      <td align="center">✅</td>
+      <td align="center">❌</td>
+    </tr>
+    <tr>
+      <td>Used by</td>
+      <td>-</td>
+      <td>-</td>
+      <td style={{textAlign: 'left'}}>
+         Most modern rich text editor, like
+         <ul>
+          <li><a href="https://lexical.dev/" target="_blank">Lexical</a></li>
+          <li><a href="https://prosemirror.net/" target="_blank">ProseMirror</a></li>
+          <li><a href="https://quilljs.com/" target="_blank">Quill</a></li>
+          <li><a href="https://www.slatejs.org/" target="_blank">Slate</a></li>
+          <li><a href="https://tiptap.dev/" target="_blank">Tiptap</a></li>
+         </ul>
+      </td>
+      <td>
+        <ul>
+          <li><a href="https://workspaceupdates.googleblog.com/2021/05/Google-Docs-Canvas-Based-Rendering-Update.html?utm_source=the+new+stack&utm_medium=referral&utm_content=inline-mention&utm_campaign=tns+platform" target="_blank">Google Docs</a></li>
+          <li><a href="https://code.visualstudio.com/blogs/2017/10/03/terminal-renderer#_dom-rendering" target="_blank">VSCode terminal</a></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+<br /><br />
+
+## Conclusion : Which one to use?
+
+If you want to build a rich text editor, **🏆 `contenteditable`** might be your best choice for development and maintenance from scratch.
+
+
+
+<br /><br />
+
+## References
+- GreatFrontend - Rich Text Editor
+- [Integrated Terminal Performance Improvements](https://code.visualstudio.com/blogs/2017/10/03/terminal-renderer#_dom-rendering)
+- [Google Workspace Updates](https://workspaceupdates.googleblog.com/2021/05/Google-Docs-Canvas-Based-Rendering-Update.html?utm_source=the+new+stack&utm_medium=referral&utm_content=inline-mention&utm_campaign=tns+platform)
+
+
+<br /><br />

@@ -1,0 +1,73 @@
+---
+sidebar_position: 2.1
+sidebar_label: '[Google Docs] Architecture - Infrastructure'
+title: '[Google Docs] Architecture - Infrastructure'
+tags:
+  - System Design
+  - Infrastructure
+---
+
+## Basic Infrastructure
+
+<img width="100%" src="/img/google-doc-basic-infrastructure.png" alt="Google Docs Basic Infrastructure" />
+
+Client-side：
+- Rich Text Editor
+
+<br />
+
+ 
+Server-side：
+- WebSocket Server (e.g. AWS EC2)
+  > handle the collaborative editing behaviors, like peer update, peer join, peer leave, etc.
+- WebSocket Load Balancer (e.g. AWS ELB)
+  > the load balancer to proxy server and redirect WebSocket request to server port.
+- Restful API Server (e.g. AWS EC2)
+  > handle user information, like user id, user name, user email, etc.
+- Restful API Load Balancer (e.g. AWS ELB)
+  > the load balancer to proxy server and redirect HTTP, HTTPS request to server port.
+- Static Storage (e.g. AWS S3)
+  > store the editor content snapshot, and the content history.
+- SQL Database (e.g. AWS RDS with PostgreSQL)
+  > store the user basic information, like user id, user name, user email, etc.
+
+
+<br /><br />
+
+## Scalable Infrastructure
+
+<img width="100%" src="/img/google-doc-scalable-infrastructure.png" alt="Google Docs Scalable Infrastructure" />
+
+Client-side：
+- Rich Text Editor
+- **Sync Engine**
+  - **Local update buffer**
+  > the buffer to store local update until the last update is sent to servers, reduce server load and latency.
+  > if the local buffer is sent to servers, it will be transfer to send update buffer.
+  - **Send update buffer**
+  > the buffer which is sent to servers already, but not confirmed by servers.
+  > if the send update buffer is confirmed by servers, the local buffer can be sent to servers.
+  - **Update logs**
+  > the logs from peer by servers, and sync the peer update to local editor.
+
+<br />
+
+Server-side：
+- WebSocket Server Clusters (e.g. AWS EC2 Cluster)
+- **Redis Broadcast for Pub/Sub (e.g. AWS ElastiCache)**：
+  > the server memory storage to store connection id and get id as soon as possible
+- WebSocket Load Balancer (e.g. AWS ELB)
+- Restful API Server (e.g. AWS EC2 Cluster)
+- Restful API Load Balancer (e.g. AWS ELB)
+- Static Storage (e.g. AWS S3)
+- SQL Database (e.g. AWS RDS with PostgreSQL)
+
+
+<br /><br />
+
+
+## References
+- GreatFrontend - Rich Text Editor
+
+
+<br /><br />
