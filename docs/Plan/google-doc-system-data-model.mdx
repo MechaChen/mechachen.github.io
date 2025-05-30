@@ -1,0 +1,214 @@
+---
+sidebar_position: 2.3
+sidebar_label: '[Google Docs] Data Model'
+title: '[Google Docs] Data Model'
+tags:
+  - System Design
+  - Data Model
+---
+
+<br />
+
+## Why we need editor state model? Not just directly use DOM?
+
+There are some reasons why we need a data model:
+
+1. ❌ Not able to support undo/redo
+2. ❌ Hard to handle custom elements
+2. ❌ DOM is too large
+3. ❌ DOM is often messed by browser extensions
+
+<br />
+
+Apparently, we need a data model to store the document state efficiently.
+
+<br />
+
+## Data Model
+
+To store data model, there are 2 ways to store the document:
+- DOM like tree structure (e.g. [Slate](https://github.com/ianstormtaylor/slate), [Quill](https://github.com/quilljs/quill))
+- Map with pointer children (e.g. [Lexical](https://github.com/facebook/lexical))
+
+For example, we have a document like this:
+
+```html
+<root>
+  <h1>Benson's doc</h1>
+  <p>Hello <strong>World</strong></p>
+</root>
+```
+
+<br />
+
+### Simple version: Tree structure
+
+The most simple way to store document is to imitate the DOM tree structure, but in JSON format.
+
+<img src="/img/dom-like-tree.png" width="600" alt="DOM like tree structure" />
+
+
+<br /><br /><br />
+
+And here is the representation in code:
+
+```js
+{
+  type: "root",
+  children: [
+    {
+      type: "h1",
+      children: [
+        { type: "text", text: "Benson's doc" },
+      ]
+    },
+    {
+      type: "paragraph",
+      children: [
+        { type: "text", text: "Hello " },
+        { type: "text", text: "World", format: 'bold' }
+      ]
+    }
+  ]
+}
+
+```
+
+<br /><br /><br />
+
+### Better version: Map with pointer children
+
+The most performant way to store document is to use a map with pointer children because :
+- we can get and set the children in O(1) time.
+- we still can make children point to other nodes, to keep the tree relationship.
+
+<br />
+
+<img src="/img/node-map.png" width="600" alt="Node map" />
+
+<br /><br />
+
+And here is the representation in code:
+
+```js
+const nodeMap = {
+  Root: {
+    type: "root",
+    children: ["1", "3"]
+  },
+  "1": {
+    type: "h1",
+    children: ["2"]
+  },
+  "2": {
+    type: "text",
+    text: "Benson's doc"
+  },
+  "3": {
+    type: "paragraph",
+    children: ["4", "5"]
+  },
+  "4": {
+    type: "text",
+    text: "Hello "
+  },
+  "5": {
+    type: "text",
+    text: "World",
+    format: "bold"
+  }
+}
+```
+
+<br />
+
+Advantages:
+- ✅ Single layer map, easy to clone, same for shallow and deep clone.
+- ✅ O(1) access if know `NodeKey`
+
+Disadvantages:
+- ❌ O(n) if children array is inserted new node or removed node.
+
+
+<br /><br /><br />
+
+### Performant version: Map with Linked List children
+
+Because inserted new node or removing node is still not ideal, we can use a linked list to store the children.
+
+<img src="/img/node-linked-list-type.png" width="700" alt="Node linked list type" />
+
+<br /><br /><br />
+
+And here is the representation in code:
+
+```ts
+interface EditorNode {
+  key: NodeKey | null,
+  parent: NodeKey | null,
+  prev: NodeKey | null,
+  next: NodeKey | null,
+}
+
+interface ElementNode extends EditorNode {
+  firstChild: NodeKey | null,
+  lastChild: NodeKey | null,
+}
+
+interface TextNode extends EditorNode {
+  text: string,
+}
+```
+
+
+<br /><br /><br /><br />
+
+With the linked list node, we have the node map like this:
+
+<img src="/img/node-map-with-linked-list.png" width="550" alt="Node map tree with linked list" />
+
+
+<br /><br /><br /><br />
+
+And the tree will be like this:
+
+<img src="/img/node-map-tree-with-linked-list.png" width="650" alt="Node map tree with linked list" />
+
+
+<br /><br />
+
+Advantages:
+- ✅ Single layer map, easy to clone, same for shallow and deep clone.
+- ✅ O(1) access if know `NodeKey`
+- ✅ O(1) if children array is inserted new node or removed node.
+
+Disadvantages:
+- ❌ Data structure is more complex, harder to understand.
+
+
+<br /><br /><br />
+
+## Comparison
+
+| Performance | Tree structure | Map with pointer children | Map with linked list children |
+| --- | --- | --- | --- |
+| Clone shallow | ❌ | ✅ | ✅ |
+| Access | O(n) | O(m) | O(1) | 
+| Insert/remove | O(n) | O(1) | O(1) |
+| Complexity | 🟢 | 🟡 | 🔴 |
+
+- n : all nodes length
+- m : children array length
+
+<br />
+
+> For performance reason, we should use the **Map with linked list children**.
+
+
+<br />
+<br />
+
+## References
+- [Great Frontend - Rich Text Editor - Data Model](https://www.greatfrontend.com/questions/system-design/rich-text-editor#data-model)
+
+<br /><br />
