@@ -1,0 +1,87 @@
+---
+sidebar_position: 2.5
+sidebar_label: '[Google Docs] Optimization - Versioning'
+title: '[Google Docs] Optimization - Versioning'
+tags:
+  - System Design
+  - Optimization
+  - Versioning
+---
+
+<br />
+
+## Versioning
+
+3 ways to implement versioning:
+1. **Entire document snapshot**
+2. **Delta snapshot with 1st version**
+3. **Hybrid document snapshot with delta snapshot**
+
+## 1. Entire document snapshot
+
+For entire document snapshot, we can store the entire document by periodically.
+
+But it has some disadvantages:
+- ❌ require a lot of storage space.
+
+<br />
+
+
+<br />
+
+## 2. Delta snapshot with 1st version
+
+For delta snapshot with 1st version, we can store the entire document as the 1st version, and then store the delta snapshot for each operation.
+
+The operation record is like this:
+
+| Rev no. | User | Operations | Timestamp | Document state |
+|---------|---------|----------------------|---------------------|---------------------------------|
+| 0 | N/A | N/A | 2024-08-03 10:00 | |
+| 1 | Charlie | INS "Hello" @0 | 2024-08-03 10:05 | "Hello" |
+| 2 | Alice | INS " world" @5 | 2024-08-03 10:10 | "Hello world" |
+| 3 | Bob | INS "!" @11 | 2024-08-03 10:15 | "Hello world!" |
+| 4 | Donald | INS " Goodbye" @12 | 2024-08-05 09:00 | "Hello world! Goodbye" |
+| 5 | Erin | INS " earth" @20 | 2024-08-05 09:10 | "Hello world! Goodbye earth" |
+
+<br />
+
+Which is very small compared to the entire document snapshot.
+
+<br /><br />
+
+But for better user experience, it can be merged into a fewer versions.
+
+| Version | Time | Last edited by |
+|---------|---------------------|------------------------|
+| 1 | 2024-08-03 10:15 | Charlie, Bob, Alice |
+| 2 | 2024-08-05 09:10 | Donald, Erin |
+
+<br />
+
+But it has some disadvantages:
+- ❌ if the operation is a lot from 1st version, it might take lots of operations to see the latest version.
+
+<br />
+
+## 3. Hybrid document snapshot with delta snapshot
+
+For hybrid document snapshot with delta snapshot, we can save snapshot periodically, and then save the delta snapshot from specific version.
+
+Which makes:
+- ✅ the storage requirement is smaller than the entire document snapshot.
+- ✅ the load speed is faster than the delta snapshot with 1st version.
+
+<br />
+
+
+
+<br /><br /><br /><br />
+
+## References
+
+- [Great Frontend - Google Docs - Versioning](https://www.greatfrontend.com/questions/system-design/collaborative-editor-google-docs#history-and-versioning)
+- [Yjs Community - How to recover to the specified version](https://discuss.yjs.dev/t/how-to-recover-to-the-specified-version/2301)
+
+
+<br /><br />
