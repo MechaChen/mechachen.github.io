@@ -1,0 +1,216 @@
+---
+sidebar_position: 2.5
+sidebar_label: '[Google Docs] Optimization - Binary encoding'
+title: '[Google Docs] Optimization - Binary encoding'
+tags:
+  - System Design
+  - Optimization
+  - Binary encoding
+---
+
+<br />
+
+## Why we need Encoding?
+
+Since in collaborative editing, there will be lots of updates, and there are 2 ways to send updates data:
+- `JSON`
+- `Binary`
+
+<br />
+
+| type | JSON | Binary |
+| ---- | ---- | ------ |
+| Readability | ✅ | ❌ |
+| Efficiency | ❌ | ✅ |
+
+<br /><br />
+
+- `JSON` is more readable, but terrible for efficiency, because`JSON` contains lots of redundant information, like:
+  - curly braces `{}`
+  - double quotes `""`
+  - commas `,`
+  - `key` name
+
+<br /><br />
+
+- And `Binary` is more efficient, we only need to send binary data, which is the same format when transfer through the network,
+and we don't need to add redundant information for readability.
+
+
+<br /><br />
+
+## How encoding works in `Yjs` and `Lexical`?
+
+There are 5 steps to send updates data from Lexical to Yjs:
+1. Lexical JSON → Yjs struct (JS object)
+2. Yjs struct → lib0 encoding
+3. lib0 encoding → WebSocket
+4. WebSocket → lib0 decoding
+5. lib0 decoding → Yjs struct
+6. Yjs struct → Lexical JSON
+
+<br /><br />
+
+Here we will use insert `A` as an example to show how encoding works in `Yjs` and `Lexical`.
+
+
+### 1. Lexical Editor generated data
+
+| Phase                         | Detail                                     | Example                                                                                                                                            |
+| -------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lexical node tree**      | Editor internal "DOM-like" tree structure                    | `js\n{\n  root: {\n    type: 'root',\n    children: [\n      { type: 'paragraph', children: [ { type: 'text', text: 'A' } ] }\n    ]\n  }\n}\n` |
+| **Lexical update payload** | JSON difference when `onUpdate` is triggered (insert/delete/modify which node) | `js\n{\n  mutations: [\n    { op: 'insert_text', nodeKey: 'node#42', offset: 0, text: 'A' }\n  ],\n  selection: { anchor: 1, focus: 1 }\n}\n`   |
+
+
+> These are still **pure JSON / JS objects**, large in size, and only for internal use by the frontend.
+
+<br /><br />
+
+### 2. @lexical/yjs convert Lexical diff to Yjs Doc
+
+In 2nd step, the @lexical/yjs will convert update JSON payload to Yjs struct object.
+
+<br />
+
+| Step | Content | Example |
+| -------------- | --------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Map to Yjs struct** | `paragraph` → `Y.XmlElement`<br />`text node` → `Y.XmlText` | `Y.XmlText` content becomes "A" |
+| **Write to Y.Doc** | `doc.transact(() => yText.insert(0, 'A'))` | Yjs internally creates a struct for clientId=1:<br />`<1,clock=0,len=1,type=text,data='A'>` |
+
+
+<br /><br />
+
+#### What does a Struct look like in JS?
+
+```js
+{
+  id: { client: 1, clock: 0 },
+  length: 1,                  // 1 text unit
+  left: null, right: null,    // inserted at the beginning
+  parent: yDoc.getText('t'),  // belongs to Y.XmlText
+  parentSub: null,
+  content: {                   // ContentString
+    constructor: ContentString,
+    str: 'A'
+  }
+}
+```
+
+<br /><br />
+
+### 3. Yjs generates binary update (lib0 encoding)
+
+| Phase | Content | Example |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **`encodeStateAsUpdateV2`** | Compare peer's stateVector to find missing structs | Peer has no data yet, so package everything |
+| **lib0 writes bytes** | Using `UpdateEncoderV2`:<br />`writeVarUint(clientId=1)`<br />`writeVarUint(clock=0)`<br />`writeVarString('A')` | Get **Uint8Array** like:<br />`[ 12, 1, 0, 65 ]`<br />(actual will have header/CRC, shown here for illustration) |
+
+> This is already **extremely small binary**, typically only 5-10% of the original JSON size.
+
+<br /><br />
+
+#### How `UpdateEncoderV2` writes `Uint8Array`
+
+**Yjs Update V2** serialization rules (highly simplified)
+
+| Order | Write | Description | Value in this example |
+| -- | ----------------------------- | -------------------------------------- | ------------- |
+| ① | `writeVarUint(#clients)` | How many clients in this update | `1` |
+| ② | `writeVarUint(clientId)` | User `1` | `1` |
+| ③ | `writeVarUint(#structs)` | How many new structs for this client | `1` |
+| ④ | `info` 1 byte | bit-flags: has left/right/parentSub... | `0x00` (= none) |
+| ⑤ | `writeVarUint(clock)` | Starting clock of this struct | `0` |
+| ⑥ | `writeVarUint(len)` | struct length | `1` |
+| ⑦ | `writeVarString(parent type)` | 0 → directly under root | `0` |
+| ⑧ | `writeVarUint(contentType)` | 4 represents *string* | `4` |
+| ⑨ | `writeVarUint(str.length)` | 1 | `1` |
+| ⑩ | UTF-8 bytes | `'A'` → `0x41` | `0x41` |
+
+<br /><br />
+
+Combined as
+`01 01 01 00 00 00 04 01 41` (10 bytes)
+
+> *Variable-length integers* (varUint) all use **lib0**'s 7-bit continuation format:<br />
+> 0-127 → 1 byte, 128-16383 → 2 bytes ..., so all values fall in the `0x00-0x7F` range.
+
+<br /><br />
+
+:::note How Yjs struct looks like in JS object & binary format?
+
+<br /><br />
+
+| Level | Content | Readable Form |
+| ------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| **Yjs Object (JS)** | `new Item(id, left, right, parent, parentSub, content, ...)` | `⟨client 1, clock 0, len 1, content='A'⟩` |
+| **Binary Stream (Uint8Array)** | Written by **UpdateEncoderV2** using variable-length integers & flags | `01 01 01 00 00 00 04 01 41`<br />(hex `01 01 01 00 00 00 04 01 41`) |
+
+> **Top row** is the "semantic" form we humans read;
+> **Bottom row** is the actual bytes transmitted over the network (using the *simplest* **1 byte 'A'** insertion as an example).
+
+:::
+
+<br />
+
+#### Code Demo: Try it yourself
+
+```js
+import * as Y from 'yjs'
+
+const doc = new Y.Doc()
+doc.clientID = 1                // For demonstration, keep ID as 1
+doc.getText('t').insert(0, 'A') // Insert one letter
+
+const u8 = Y.encodeStateAsUpdateV2(doc) // Uint8Array
+console.log([...u8])   // Might print [1,1,1,0,0,0,4,1,65]
+```
+
+> When you send `applyUpdateV2(peerDoc, u8)` to another browser,
+> it will reconstruct the same `A`, exactly demonstrating the round trip of **"semantic struct → binary stream → semantic struct"**.
+
+<br /><br />
+
+### 4. Transmit to server & other Peers
+
+| Step | Transport Layer | Example |
+| ------------------ | -------------------------------------------------------- | ----------------------------- |
+| **WebSocket send** | Directly use `socket.send(uint8Array)` (Binary Frame) | **on-wire** = same Uint8Array |
+| **Server relay** | *Option A* broadcast unchanged<br />*Option B* merge updates |
+
+<br /><br />
+
+### 5. Peer reconstruction
+
+| Phase | Content | Example |
+| ------------------------------------ | --------------------------- | ----------------------------------------------------------- |
+| **`applyUpdateV2(doc, uint8Array)`** | Yjs parses binary, creates same struct | Text "A" appears in peer's `Y.XmlText` |
+| **@lexical/yjs reflects to editor** | Map Yjs changes → Lexical command | Peer's Lexical `editor.update(() => …)`, inserts `A` in paragraph |
+
+<br /><br />
+
+
+### Summary
+
+**Complete flow:**
+`Lexical JSON` → **Yjs struct** → **lib0 encoding** → **WebSocket** → **lib0 decoding** → **Yjs struct** → `Lexical JSON`.
+
+1. **Lexical** handles UI
+2. **@lexical/yjs** writes diffs to **Yjs**
+3. **Yjs** only transmits **Uint8Array diff packets**
+4. Peers map back to Yjs struct → Lexical after receiving
+
+This achieves in collaborative editing:
+*semantic completeness ✕ minimal size ✕ peer reconstruction*
+
+
+
+<br /><br />
+
+## References
+- [DeepWiki - Yjs](https://deepwiki.com/yjs/yjs/1.1-architecture)
+- [Lexical-Yjs](https://github.com/facebook/lexical/tree/main/packages/lexical-yjs)
+- [Yjs - UpdateEncoderV2](https://github.com/yjs/yjs/blob/main/src/utils/UpdateEncoder.js)
+- [lib0 - Encoding](https://github.com/dmonad/lib0/blob/main/encoding.js)
+
+
+<br /><br />
