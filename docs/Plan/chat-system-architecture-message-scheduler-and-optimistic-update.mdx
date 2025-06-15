@@ -1,0 +1,106 @@
+---
+sidebar_position: 1.3
+sidebar_label: '[Chat App] Architecture - Message Syncer and Optimistic Update'
+title: '[Chat App] Architecture - Message Syncer and Optimistic Update'
+tags:
+  - System Design
+  - Architecture
+---
+
+## Message Syncer and Optimistic Update
+
+When the user sends out a message (or any update made by the user in general), we want to reflect the changes immediately. It is poor user experience to wait for the server's confirmation before showing an updated UI.
+
+<br />
+
+Hence outgoing chat messages/user actions are 
+1. inserted into the Client side storage instead and then marked as pending. 
+2. Pending messages are also reflected immediately in the UI. 
+3. And we can utilize the message status to indicate the various message delivery statuses.
+
+<br />
+
+Here are the message statuses:
+
+<br />
+
+| Message Status | Description | Messenger | WhatsApp |
+|---------------|-------------|-----------|-----------|
+| Sending | Application is attempting to send the message | Empty circle | Clock icon |
+| In-Flight | Message was sent to the server successfully | Checkmark in outline circle | Single gray checkmark |
+| Success | Message delivered to the recipients and stored in the server | Checkmark in filled circle | Double gray checkmark |
+| Failed | Message failed to send | Exclamation icon in circle | Exclamation icon in circle |
+
+<br />
+
+
+## Message Syncing process
+
+Here are the message syncer components:
+
+<img width="200px" src="/img/message_syncer_components.jpg" alt="Message Syncer Components" />
+
+<br />
+
+* 👤 **Client**： The user device or app.
+* 💬 **Raw message**： The original message before processing.
+* ⏱️ **Message with status**： A message marked as pending, in-flight, success, or failed.
+* 🔄 **Message Syncer**： The component that syncs messages with the server.
+* 🗄️ **Client Storage**： Local storage used to persist message states.
+* 🖥️ **Server**： The backend server that processes and stores the messages.
+
+<br />
+
+### ⏳**Pending message**
+
+<img width="500px" src="/img/message_syncer_pending.jpg" alt="Pending Message" />
+
+1. The **Client** sends a **raw message**.
+2. It is forwarded to the **Message Syncer**.
+3. The Syncer wraps it with a **"pending"** status.
+4. It is stored in the **Client Storage**.
+5. The Syncer prepares to sync the message with the **Server**.
+
+<br />
+
+### 🕒 **In-Flight message**
+
+<img width="500px" src="/img/message_syncer_in_flight.jpg" alt="In-Flight Message" />
+
+1. The **Message Syncer** initiates communication with the **Server**.
+2. The message is in the process of being synced.
+3. While waiting for the response, it is stored in **Client Storage** and marked as **"in-flight"**.
+4. The UI fetches the message from local storage and shows a **"sending"** indicator.
+5. The **Client** sees the message as sent, but not yet confirmed.
+
+<br />
+
+### ✅ **Success message**
+
+<img width="500px" src="/img/message_syncer_success.jpg" alt="Success Message" />
+
+1. The **Message Syncer** fetches updates from the **Server**.
+2. Upon success, it writes the message into the **Client Storage**.
+3. The message is then read from Client Storage and marked as **"delivered"**.
+4. The UI displays the message with a **success status**.
+5. The **Client** sees the message marked with a green check (successfully sent).
+
+<br />
+
+### ❌ **Failed message**
+
+<img width="500px" src="/img/message_syncer_failed.jpg" alt="Failed Message" />
+
+1. The **Message Syncer** tries to sync with the **Server**.
+2. Syncing fails (e.g., due to a network or server issue).
+3. The message remains in **Client Storage**.
+4. The system reads the message from storage and marks it as **"failed"**.
+5. The **Client UI** displays the message with a **failure icon**, often with a retry option.
+
+
+<br /><br />
+
+## Reference
+- GreatFrontend - Chat App
+
+<br /><br />
