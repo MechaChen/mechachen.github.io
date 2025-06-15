@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1.3
+sidebar_position: 1.2
 sidebar_label: '[Chat App] Architecture - Message Syncer and Optimistic Update'
 title: '[Chat App] Architecture - Message Syncer and Optimistic Update'
 tags:
@@ -67,11 +67,11 @@ Here are the message syncer components:
 
 <img width="500px" src="/img/message_syncer_in_flight.jpg" alt="In-Flight Message" />
 
-1. The **Message Syncer** initiates communication with the **Server**.
-2. The message is in the process of being synced.
-3. While waiting for the response, it is stored in **Client Storage** and marked as **"in-flight"**.
-4. The UI fetches the message from local storage and shows a **"sending"** indicator.
-5. The **Client** sees the message as sent, but not yet confirmed.
+1. The **Message Syncer** process the message which is sent back from **Server**.
+2. The **Message Syncer** then get the **"pending"** message in the **Client Storage** by the message id.
+3. The **Message Syncer** then update the message status to **"in-flight"** in the **Client Storage**.
+4. The Message status is updated as **"in-flight"**.
+5. The **Client** sees the message as **"in-flight"** status.
 
 <br />
 
@@ -79,11 +79,11 @@ Here are the message syncer components:
 
 <img width="500px" src="/img/message_syncer_success.jpg" alt="Success Message" />
 
-1. The **Message Syncer** fetches updates from the **Server**.
-2. Upon success, it writes the message into the **Client Storage**.
-3. The message is then read from Client Storage and marked as **"delivered"**.
-4. The UI displays the message with a **success status**.
-5. The **Client** sees the message marked with a green check (successfully sent).
+1. The **Message Syncer** process the message which is sent back from **Server**.
+2. The **Message Syncer** then get the **"in-flight"** message in the **Client Storage** by the message id.
+3. The **Message Syncer** then update the message status to **"success"** in the **Client Storage**.
+4. The Message status is updated as **"success"**.
+5. The **Client** sees the message as **"success"** status.
 
 <br />
 
@@ -91,11 +91,11 @@ Here are the message syncer components:
 
 <img width="500px" src="/img/message_syncer_failed.jpg" alt="Failed Message" />
 
-1. The **Message Syncer** tries to sync with the **Server**.
-2. Syncing fails (e.g., due to a network or server issue).
-3. The message remains in **Client Storage**.
-4. The system reads the message from storage and marks it as **"failed"**.
-5. The **Client UI** displays the message with a **failure icon**, often with a retry option.
+1. The **Message Syncer** process the message which is sent back from **Server**.
+2. The **Message Syncer** then get the **"in-flight"** message in the **Client Storage** by the message id.
+3. The **Message Syncer** then update the message status to **"failed"** in the **Client Storage**.
+4. The Message status is updated as **"failed"**.
+5. The **Client** sees the message as **"failed"** status.
 
 
 <br /><br />
