@@ -1,6 +1,7 @@
 ---
-sidebar_label: '[Chat System] Functional Requirements'
-title: '[Chat System] Functional Requirements'
+sidebar_position: 1
+sidebar_label: '[Chat System] Requirements'
+title: '[Chat System] Requirements'
 tags:
   - Chat System
   - Architecture
@@ -27,8 +28,8 @@ Here are some questions we can ask the interviewer to clarify the requirements:
 
 <table>
   <tr>
-    <td>Candidate</td>
-    <td>Interviewer</td>
+    <td>🧑‍🎓 Candidate</td>
+    <td>🧑‍🏫 Interviewer</td>
   </tr>
   <tr>
     <td>
@@ -83,27 +84,20 @@ Here are some questions we can ask the interviewer to clarify the requirements:
       Forever.
     </td>
   </tr>
+  <tr>
+    <td>
+      <b>Should the messages be updated in real-time?</b>
+    </td>
+    <td>
+      Yes, users should see the messages in real-time.
+    </td>
+  </tr>
 </table>
 
 
 <br />
 <br />
 
-## Architecture
-
-<img src="/img/chat-system-architecture.png" alt="Chat System Architecture" />
-
-### Component responsibilities
-
-- Create room inputs：
-  - include select user dropdown menu, create room button to create a new chat room
-- User's room list
-  - show all the user's chat rooms, and able to select one to start chatting
-- Chat room
-  - show all the previous and real time messages between users
-  - able to send message to current chat room
-
-<br />
 
 ### Rendering approach
 
@@ -118,9 +112,9 @@ Create room inputs:
 
 ```tsx
 type User = {
-    id: string,
-    name: string,
-    password: string,
+  id: string,
+  name: string,
+  password: string,
 }
 ```
 
@@ -130,9 +124,9 @@ User room lists
 
 ```tsx
 type Room = {
-    id: string,
-    participants: User[],
-    createdAt: Date,
+  id: string,
+  participants: User[],
+  createdAt: Date,
 }
 ```
 
@@ -142,18 +136,18 @@ Chat room
 
 ```tsx
 type Message = {
-    roomId: string,
-    id: string,
-    content: string,
-    senderId: string,
-    createdAt: Date,
-    status: 'in-flight' | 'success' | 'failed',
+  roomId: string,
+  id: string,
+  content: string,
+  senderId: string,
+  createdAt: Date,
+  status: 'in-flight' | 'success' | 'failed',
 }
 
 type DraftMessage = {
-    userIdAndRoomId: string,
-    message: string,
-    fileList?: File[],
+  userIdAndRoomId: string,
+  message: string,
+  fileList?: File[],
 }
 ```
 

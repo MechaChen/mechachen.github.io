@@ -1,7 +1,7 @@
 ---
-sidebar_position: 3.2
-sidebar_label: '[Google Docs] Architecture - Network'
-title: '[Google Docs] Architecture - Network'
+sidebar_position: 1.5
+sidebar_label: '[Chat System] Architecture - Network'
+title: '[Chat System] Architecture - Network'
 tags:
   - System Design
   - Architecture
@@ -9,7 +9,7 @@ tags:
 
 ## Network
 
-For collaborative editing, we need to support real-time communication between users.
+For chat system, we need to support real-time communication between users.
 
 There are 2 main ways to support real-time communication:
 
@@ -21,7 +21,7 @@ There are 2 main ways to support real-time communication:
 ## Client-Server Model (WebSocket)
 
 
-<img src="/img/websocket.png" width="450" alt="WebSocket" />
+<img src="/img/websocket.png" width="400" alt="WebSocket" />
 
 <br /><br />
 
@@ -46,7 +46,7 @@ The client server model is that we use a central server (or multiple servers) to
 ## Peer-to-Peer (WebRTC)
 
 
-<img src="/img/peer-to-peer.png" width="450" alt="Peer to Peer" />
+<img src="/img/peer-to-peer.png" width="400" alt="Peer to Peer" />
 
 <br /><br />
 
@@ -68,7 +68,7 @@ The peer-to-peer model is that only rely on clients themselves to handle all con
 
 <br /><br />
 
-## Conclusion : Which one to use?
+## Network Conclusion : Which one to use?
 
 Here are the pros and cons of each model:
 
@@ -84,8 +84,37 @@ Here are the pros and cons of each model:
 
 <br /><br />
 
-Since what document value is document's correctness, which can be achieved by centralized source of truth on server.
+Since what chat system requires is correctness, which can be achieved by centralized source of truth on server.
 And Client-Server Model is easier to scale, **🏆 Client-Server Model will be our choice**.
+
+<br /><br />
+
+## Server vs Serverless architecture
+
+<img src="/img/server-vs-serverless-architecture.jpg" width="600" alt="Server vs Serverless" />
+
+About the server architecture, there are 2 main types:
+
+1. Server：Build and maintain your own server
+2. Serverless：Use a third-party server (e.g. AWS, GCP, Azure) to handle the server
+
+
+<br />
+
+And here are the pros and cons of each type:
+
+| Features | 🏆 Server | Serverless |
+|------|:------:|:------:|
+| Long live protocols support ⭐️⭐️⭐️ | 🟢 | 🟡 |
+| Cost | 🔴 | 🟢 |
+| Scalability | 🟢 | 🔴 |
+| Control | 🟢 | 🔴 |
+
+<br /><br />
+
+Since we need a long live server to have a better WebSocket support to execute real time communication, 
+even Server Send Events to push new created room and last message to clients, which Serverless is not supported, **🏆 Server will be our choice**.
+
 
 <br /><br />
 
