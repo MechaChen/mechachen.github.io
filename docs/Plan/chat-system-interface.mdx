@@ -1,208 +1,186 @@
 ---
-sidebar_position: 1
-sidebar_label: '[Chat App] Data Structure and Interface'
-title: '[Chat App] Data Structure and Interface'
+sidebar_position: 1.4
+sidebar_label: '[Chat App] Interface'
+title: '[Chat App] Interface'
 tags:
   - Chat System
-  - Architecture
+  - Interface
 ---
 
+Here are the interfaces with the backend server.
 
-Please design a chat system like following video:
+## HTTP API endpoints
 
-<video
-    controls
-    width="700px"
-    src="https://github.com/user-attachments/assets/8316b8db-1616-4842-b5e2-182e083446c1"
-    alt="Chat System Functional Requirements"
-/>
+### 1. `GET /users`
 
-
-&nbsp;
-
-## Requirements
-
-As the candidate, it is important to understand the functional (basic) requirements first.
-
-Here are some questions we can ask the interviewer to clarify the requirements:
-
-<table>
-  <tr>
-    <td>🧑‍🎓 Candidate</td>
-    <td>🧑‍🏫 Interviewer</td>
-  </tr>
-  <tr>
-    <td>
-      <b>What are the core functionalities needed?</b>
-    </td>
-    <td>
-      <ul>
-        <li>Sending a message to a user.</li>
-        <li>Getting user's chat room list.</li>
-        <li>Receiving messages from a user.</li>
-        <li>See one's chat history with a user.</li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <b>Is the message receiving real-time?</b>
-    </td>
-    <td>
-      Yes, users should receive messages in real-time, as fast as possible without having to refresh the page
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <b>What kind of message formats should be supported?</b>
-    </td>
-    <td>
-      Let's support formats text at first. We can discuss supporting emojis, images if there's time.
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <b>What kind of chat app shall we design? 1 on 1 or group based?</b>
-    </td>
-    <td>
-      It should support both 1 on 1 and group chat.
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <b>Is there a message size limit?</b>
-    </td>
-    <td>
-        Yes, text length should be less than 100,000 characters long.
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <b>How long shall we store the chat history?</b>
-    </td>
-    <td>
-      Forever.
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <b>Should the messages be updated in real-time?</b>
-    </td>
-    <td>
-      Yes, users should see the messages in real-time.
-    </td>
-  </tr>
-</table>
-
-
-<br />
-<br />
-
-
-### Rendering approach
-
-We will choose <b>CSR</b>, because it is high interactive and chat system's data should not be crawled by search engines.
+Get the users you can create a new room with.
 
 <br />
 
+**Payload**：None <br />
+**Response**：
 
-## Data structure
+```json
+[
+  {
+    "id": "user_123",
+    "name": "Alice",
+    "avatar": "https://example.com/avatar/alice.png"
+  },
+  {
+    "id": "user_456",
+    "name": "Bob",
+    "avatar": "https://example.com/avatar/bob.png"
+  }
+]
+```
 
-Create room inputs:
+<br /><br />
 
-```tsx
-type User = {
-  id: string,
-  name: string,
-  password: string,
+
+### 2. `POST /users`
+
+Create a new user
+
+**Payload**：
+
+```json
+{
+  "name": "Alice",
+  "avatar": "https://example.com/avatar/alice.png"
 }
 ```
 
 <br />
 
-User room lists
+**Response**：
 
-```tsx
-type Room = {
-  id: string,
-  participants: User[],
-  createdAt: Date,
+```json
+{
+  "id": "user_123",
+  "name": "Alice",
+  "avatar": "https://example.com/avatar/alice.png"
+}
+```
+
+<br /><br />
+
+### 3. `GET /rooms/{room_id}/messages`
+
+Get the messages of the room
+
+<br />
+
+**Payload**：None (only `room_id` param) <br />
+**Response**：
+
+```json
+[
+  {
+    "roomId": "room_456",
+    "messageId": "msg_001",
+    "content": "Hello!",
+    "senderId": "user_123",
+    "createdAt": "2024-06-16T12:34:56.789Z",
+    "status": "success"
+  },
+  {
+    "roomId": "room_456",
+    "messageId": "msg_002",
+    "content": "Hi!",
+    "senderId": "user_456",
+    "createdAt": "2024-06-16T12:35:12.000Z",
+    "status": "success"
+  }
+]
+```
+
+<br /><br />
+
+
+## WebSocket action endpoints
+
+<br />
+
+### 4. `create_room`
+
+The reason we use websocket is to notify a new room to users which is not in the room but online,
+which can be replaced by HTTP API + SSE to notify other not in-room users.
+
+<br />
+
+**Payload**：
+
+```json
+{
+  "action": "create_room",
+  "participants": ["user_123", "user_456"]
 }
 ```
 
 <br />
 
-Chat room
+**Server Response**（broadcast to participants）：
 
-```tsx
-type Message = {
-  roomId: string,
-  id: string,
-  content: string,
-  senderId: string,
-  createdAt: Date,
-  status: 'in-flight' | 'success' | 'failed',
-}
-
-type DraftMessage = {
-  userIdAndRoomId: string,
-  message: string,
-  fileList?: File[],
+```json
+{
+  "type": "room_created",
+  "room": {
+    "id": "room_456",
+    "participants": [
+      { "id": "user_123", "name": "Alice" },
+      { "id": "user_456", "name": "Bob" }
+    ],
+    "createdAt": "2024-06-16T12:36:00.000Z"
+  }
 }
 ```
 
+<br /><br />
+
+### 5. `create_message`
+
+Create a new message by a user to notify other users in the room.
 
 <br />
 
-## Interface
+**Payload**：
 
-
-
-Chat room inputs:
-
-```tsx
-HTTP: 
-- GET /users
-(- POST /rooms) 
-// there are 2 options, 
-// 1. create room by HTTP request and get real time new room by SSE
-// 2. create room and get real time new room list by WebSocket if with Serverless architecture
-
-WebSocket:
-- actions: create_room
+```json
+{
+  "action": "create_message",
+  "roomId": "room_456",
+  "messageId": "msg_003",  // client-generated UUID
+  "content": "How are you?",
+  "senderId": "user_123",
+  "createdAt": "2024-06-16T12:36:10.000Z"
+}
 ```
 
 <br />
 
-User room lists:
+**Server Response**（broadcast to all users in the room）：
 
-```tsx
-HTTP:
-GET /rooms
-
-WebSocket:
-- listen actions: create_room
-
-(SSE:
-- listen actions: create_room
-)
-```
-
-<br />
-
-Chat room:
-
-```tsx
-HTTP:
-- POST /rooms/:roomId/messages
-
-WebSocket:
-- actions:
-    - create_connection
-    - create_message
-    - delete_connection
-- listen actions:
-    - create_message
+```json
+{
+  "type": "message_created",
+  "message": {
+    "roomId": "room_456",
+    "messageId": "msg_003",
+    "content": "How are you?",
+    "senderId": "user_123",
+    "createdAt": "2024-06-16T12:36:10.000Z",
+    "status": "success"
+  }
+}
 ```
 
 
+<br /><br />
+
+
+## Reference
+- GreatFrontend - Chat App
+
+
+<br /><br />
