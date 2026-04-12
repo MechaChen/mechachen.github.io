@@ -12,9 +12,9 @@
 <script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-PT9T4SESTR",{anonymize_ip:!0})</script>
 <link rel="preconnect" href="https://www.googletagmanager.com">
 <script>window.dataLayer=window.dataLayer||[]</script>
-<script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-PN468BNB",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script><link rel="stylesheet" href="/zh-tw/assets/css/styles.4f4f1f89.css">
-<script src="/zh-tw/assets/js/runtime~main.77d66588.js" defer="defer"></script>
-<script src="/zh-tw/assets/js/main.45776169.js" defer="defer"></script>
+<script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-PN468BNB",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script><link rel="stylesheet" href="/zh-tw/assets/css/styles.82c51d91.css">
+<script src="/zh-tw/assets/js/runtime~main.860fcc1b.js" defer="defer"></script>
+<script src="/zh-tw/assets/js/main.ef6e86f3.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PN468BNB" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -51,18 +51,18 @@
 <br>
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="by-terminal">by Terminal<a href="#by-terminal" class="hash-link" aria-label="by Terminal的直接連結" title="by Terminal的直接連結" translate="no">​</a></h3>
 <p>使用</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">docker images</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">docker images</span><br></span></code></pre></div></div>
 <p>就可以顯示出目前所有存在的 Image</p>
 <figure><img src="/img/docker-show-images.png" alt="Docker run by UI"></figure>
 <br>
 <br>
-<p>我們可以藉由</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">docker run &lt;Repository&gt;</span><br></span></code></pre></div></div>
+<p>我  們可以藉由</p>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">docker run &lt;Repository&gt;</span><br></span></code></pre></div></div>
 <p>來開啟一個以此 <code>&lt;REPOSITORY&gt;</code> 為 Image 的 Container</p>
 <br>
 <br>
 <p>我們可以在 <code>run</code> &amp; <code>&lt;REPOSITORY&gt;</code> 中間客製化 Container 的名稱</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">docker run --name &lt;Container Name&gt; &lt;Repository&gt;</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">docker run --name &lt;Container Name&gt; &lt;Repository&gt;</span><br></span></code></pre></div></div>
 <br>
 <br>
 <h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="客製化-port">客製化 <code>port</code><a href="#客製化-port" class="hash-link" aria-label="客製化-port的直接連結" title="客製化-port的直接連結" translate="no">​</a></h4>
@@ -72,22 +72,22 @@
 <li class="">Container 的 port</li>
 <li class="">主機上的 port</li>
 </ul>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">docker run --name &lt;Container Name&gt; &lt;Repository&gt; -p &lt;Host Port&gt;:&lt;Container Port&gt;</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain"># example</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">docker run --name test-container test-image -p 4001:4000</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">docker run --name &lt;Container Name&gt; &lt;Repository&gt; -p &lt;Host Port&gt;:&lt;Container Port&gt;</span><br></span><span class="token-line" style="color:#cdd6f4"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#cdd6f4"><span class="token plain"># example</span><br></span><span class="token-line" style="color:#cdd6f4"><span class="token plain">docker run --name test-container test-image -p 4001:4000</span><br></span></code></pre></div></div>
 <p>如果不想要 docker Container 運行時，顯示在你的 terminal，你可以加入 <code>-d</code> flag (detached)，就不會阻擋 terminal，可以繼續在 terminal 輸入其他指令了</p>
 <br>
 <br>
 <h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="start-already-existed-container">Start already existed Container<a href="#start-already-existed-container" class="hash-link" aria-label="Start already existed Container的直接連結" title="Start already existed Container的直接連結" translate="no">​</a></h4>
 <p>如果我們想要啟用已經存在，但狀態是 <strong>Exited</strong> 的 Container，
 我們可以用</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">docker start &lt;Container Name&gt;</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">docker start &lt;Container Name&gt;</span><br></span></code></pre></div></div>
 <br>
 <br>
 <br>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="stop-container">Stop Container<a href="#stop-container" class="hash-link" aria-label="Stop Container的直接連結" title="Stop Container的直接連結" translate="no">​</a></h2>
-<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="by-terminal-1">by terminal<a href="#by-terminal-1" class="hash-link" aria-label="by terminal的直接連結" title="by terminal的直接連結" translate="no">  ​</a></h3>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="by-terminal-1">by terminal<a href="#by-terminal-1" class="hash-link" aria-label="by terminal的直接連結" title="by terminal的直接連結" translate="no">​</a></h3>
 <h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="show-current-container">show current Container<a href="#show-current-container" class="hash-link" aria-label="show current Container的直接連結" title="show current Container的直接連結" translate="no">​</a></h4>
 <p>利用</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">docker ps</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">docker ps</span><br></span></code></pre></div></div>
 <p>來確認現在所有 <em>In-Use</em> 的 Container 的，
 <strong>Exited</strong> 的不會顯示在這
 ( <code>ps</code> === Process )</p>
@@ -97,11 +97,11 @@
 <br>
 <h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="stop-container-1">Stop Container<a href="#stop-container-1" class="hash-link" aria-label="Stop Container的直接連結" title="Stop Container的直接連結" translate="no">​</a></h4>
 <p>我們可以利用</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">docker stop &lt;Container Name or Container ID&gt;</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">docker stop &lt;Container Name or Container ID&gt;</span><br></span></code></pre></div></div>
 <p>來終止一個 Container 的運行</p>
 <br>
 <br>
-<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="參考資源">參考 資源<a href="#參考資源" class="hash-link" aria-label="參考資源的直接連結" title="參考資源的直接連結" translate="no">​</a></h3>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="參考資源">參考資源<a href="#參考資源" class="hash-link" aria-label="參考資源的直接連結" title="參考資源的直接連結" translate="no">​</a></h3>
 <ul>
 <li class=""><a href="https://www.youtube.com/watch?v=ZPEpreOpqao&amp;list=PL4cUxeGkcC9hxjeEtdHFNYMtCpjNBm3h7&amp;index=7" target="_blank" rel="noopener noreferrer" class="">Docker Crash Course #7 - Starting &amp; Stopping Containers (youtube.com)</a></li>
 </ul>

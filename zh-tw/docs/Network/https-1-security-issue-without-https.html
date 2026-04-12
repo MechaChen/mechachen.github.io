@@ -12,9 +12,9 @@
 <script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-PT9T4SESTR",{anonymize_ip:!0})</script>
 <link rel="preconnect" href="https://www.googletagmanager.com">
 <script>window.dataLayer=window.dataLayer||[]</script>
-<script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-PN468BNB",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script><link rel="stylesheet" href="/zh-tw/assets/css/styles.4f4f1f89.css">
-<script src="/zh-tw/assets/js/runtime~main.77d66588.js" defer="defer"></script>
-<script src="/zh-tw/assets/js/main.45776169.js" defer="defer"></script>
+<script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-PN468BNB",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script><link rel="stylesheet" href="/zh-tw/assets/css/styles.82c51d91.css">
+<script src="/zh-tw/assets/js/runtime~main.860fcc1b.js" defer="defer"></script>
+<script src="/zh-tw/assets/js/main.ef6e86f3.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PN468BNB" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -59,7 +59,7 @@
 <br>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="http-的安全問題-2key-stolen">HTTP 的安全問題 2：Key stolen<a href="#http-的安全問題-2key-stolen" class="hash-link" aria-label="HTTP 的安全問題 2：Key stolen的直接連結" title="HTTP 的安全問題 2：Key stolen的直接連結" translate="no">​</a></h2>
 <p>但這種方法還是有個小漏洞，那就是</p>
-<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">當第一次傳輸的鑰匙被偷時，駭客就可以解密了</span><br></span></code></pre></div></div>
+<div class="language-text codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">當第一次傳輸的鑰匙被偷時，駭客就可以解密了</span><br></span></code></pre></div></div>
 <br>
 <p>駭客的攻擊流程如下圖：</p>
 <ol>
@@ -77,7 +77,7 @@
 <h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="原理-1">原理<a href="#原理-1" class="hash-link" aria-label="原理的直接連結" title="原理的直接連結" translate="no">​</a></h3>
 <p>非對稱加密的流程如下：</p>
 <ol>
-<li class="">我們在接收訊息方 (Person 2) 產生一組鑰匙，一個是公開的 (Public key)，一個是私有的 (Private key)，公鑰大家都可以取得，但私鑰只會保留在自己身上，且經過公鑰加密的資訊，可以藉由私鑰解密，反之亦然</li>
+<li class="">我們在接收訊息方 (Person 2) 產生一組鑰匙，一個是公開的 (Public key)，一個是私有的 (Private key)，公鑰大家都可以取得，但私鑰只會保留在自己身上，且經過公鑰加密的資訊，可以藉由私鑰解密，反  之亦然</li>
 <li class="">我們將公鑰傳給對方 (Person 1)，讓對方用來加密</li>
 <li class="">對方利用公鑰加密，以確保資訊不會被駭客以明文讀取</li>
 </ol>
@@ -109,7 +109,7 @@
 <div class="theme-admonition theme-admonition-info admonition_xJq3 alert alert--info"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span><strong>我們都已經知道 CLIENT 的 IP, MAC ADDRESS 了，為什麼還會被中間人攻擊呢？</strong></div><div class="admonitionContent_BuS1"><p>其實駭客可以透過一些方法，將 Server 導向錯誤的 IP address， 以下是幾種常見的方法：</p><ul>
 <li class="">
 <p><strong>ARP 欺騙 (ARP spoofing)</strong>：
-攻擊者利用 ARP 協議的漏洞，偽造 ARP 回  應，使受害者誤以為攻擊者的 MAC 地址是通信對象的 MAC 地址。
+攻擊者利用 ARP 協議的漏洞，偽造 ARP 回應，使受害者誤以為攻擊者的 MAC 地址是通信對象的 MAC 地址。
 即使知道正確的 MAC 地址，攻擊者仍然可以使用這種方法欺騙我們的設備</p>
 </li>
 <li class="">

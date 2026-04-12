@@ -12,9 +12,9 @@
 <script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-PT9T4SESTR",{anonymize_ip:!0})</script>
 <link rel="preconnect" href="https://www.googletagmanager.com">
 <script>window.dataLayer=window.dataLayer||[]</script>
-<script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-PN468BNB",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script><link rel="stylesheet" href="/assets/css/styles.4f4f1f89.css">
-<script src="/assets/js/runtime~main.173ebd33.js" defer="defer"></script>
-<script src="/assets/js/main.b919763a.js" defer="defer"></script>
+<script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-PN468BNB",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script><link rel="stylesheet" href="/assets/css/styles.82c51d91.css">
+<script src="/assets/js/runtime~main.1857bc51.js" defer="defer"></script>
+<script src="/assets/js/main.0f435774.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PN468BNB" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -59,7 +59,7 @@
 <br>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="http-的安全問題-2key-stolen">HTTP 的安全問題 2：Key stolen<a href="#http-的安全問題-2key-stolen" class="hash-link" aria-label="Direct link to HTTP 的安全問題 2：Key stolen" title="Direct link to HTTP 的安全問題 2：Key stolen" translate="no">​</a></h2>
 <p>但這種方法還是有個小漏洞，那就是</p>
-<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">當第一次傳輸的鑰匙被偷時，駭客就可以解密了</span><br></span></code></pre></div></div>
+<div class="language-text codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">當第一次傳輸的鑰匙被偷時，駭客就可以解密了</span><br></span></code></pre></div></div>
 <br>
 <p>駭客的攻擊流程如下圖：</p>
 <ol>
@@ -79,7 +79,7 @@
 <ol>
 <li class="">我們在接收訊息方 (Person 2) 產生一組鑰匙，一個是公開的 (Public key)，一個是私有的 (Private key)，公鑰大家都可以取得，但私鑰只會保留在自己身上，且經過公鑰加密的資訊，可以藉由私鑰解密，反之亦然</li>
 <li class="">我們將公鑰傳給對方 (Person 1)，讓對方用來加密</li>
-<li class="">對方利用公鑰加密，以確保資訊 不會被駭客以明文讀取</li>
+<li class="">對方利用公鑰  加密，以確保資訊不會被駭客以明文讀取</li>
 </ol>
 <br>
 <p>這樣一來，就只有 Person 2 能看到解密後的資料，詳細過程如下圖：
@@ -93,7 +93,7 @@
 <p>但是先別高興得太早，事情哪有這麼簡單呢？ 俗話說「你有張良計我有過牆梯」，那駭客自然就會有更厲害的招來突破這個安全網啦～</p>
 <br>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="http-的安全問題-3man-in-the-middle-attack-中間人攻擊">HTTP 的安全問題 3：Man-in-the-middle attack (中間人攻擊)<a href="#http-的安全問題-3man-in-the-middle-attack-中間人攻擊" class="hash-link" aria-label="Direct link to HTTP 的安全問題 3：Man-in-the-middle attack (中間人攻擊)" title="Direct link to HTTP 的安全問題 3：Man-in-the-middle attack (中間人攻擊)" translate="no">​</a></h2>
-<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="問題非對稱加密還是會被破解">問題：非對稱加密還是會被破解<a href="#問題非對稱加密還是會被破解" class="hash-link" aria-label="Direct link to 問題：非對稱加密還是會被破解" title="Direct link to 問題：非對稱加密還是會被破解" translate="no">​</a></h3>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="問題非對稱加密還是會被破解">問題：非對稱加密還是會被破解<a href="#問題非對稱加密還是會被破解" class="hash-link" aria-label="Direct link to 問題：非對稱加密還是會被 破解" title="Direct link to 問題：非對稱加密還是會被破解" translate="no">​</a></h3>
 <p>雖然非對稱式加密可以阻止駭客直接從旁邊知道你的資料 (Sniffing attack)，但是當駭客直接介入我們的傳輸過程時，將傳輸的對象導向成駭客自己時， <br>
 ➡️ 這時候，駭客就可以拿到 Person 2 的 Public key <br>
 ➡️ 然後駭客將自己的 Public key (這裡稱 H-Public key) 傳給 Person 1 <br></p>
@@ -110,7 +110,7 @@
 <li class="">
 <p><strong>ARP 欺騙 (ARP spoofing)</strong>：
 攻擊者利用 ARP 協議的漏洞，偽造 ARP 回應，使受害者誤以為攻擊者的 MAC 地址是通信對象的 MAC 地址。
-即使知道正確的 MAC 地址，攻擊者 仍然可以使用這種方法欺騙我們的設備</p>
+即使知道正確  的 MAC 地址，攻擊者仍然可以使用這種方法欺騙我們的設備</p>
 </li>
 <li class="">
 <p><strong>DNS 劫持 (DNS hijacking)</strong>：

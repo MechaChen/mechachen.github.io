@@ -12,9 +12,9 @@
 <script>function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-PT9T4SESTR",{anonymize_ip:!0})</script>
 <link rel="preconnect" href="https://www.googletagmanager.com">
 <script>window.dataLayer=window.dataLayer||[]</script>
-<script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-PN468BNB",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script><link rel="stylesheet" href="/assets/css/styles.4f4f1f89.css">
-<script src="/assets/js/runtime~main.173ebd33.js" defer="defer"></script>
-<script src="/assets/js/main.b919763a.js" defer="defer"></script>
+<script>!function(e,t,a,n){e[n]=e[n]||[],e[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"});var g=t.getElementsByTagName(a)[0],m=t.createElement(a);m.async=!0,m.src="https://www.googletagmanager.com/gtm.js?id=GTM-PN468BNB",g.parentNode.insertBefore(m,g)}(window,document,"script","dataLayer")</script><link rel="stylesheet" href="/assets/css/styles.82c51d91.css">
+<script src="/assets/js/runtime~main.1857bc51.js" defer="defer"></script>
+<script src="/assets/js/main.0f435774.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PN468BNB" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -48,14 +48,14 @@
 <p>在瀏覽器中，輸入 chrome://net-internals#DNS ，就可以查找我們自己本地的瀏覽器，是否有 cache 該 domain 解析出的 ip address，例如，當我們查找 google.com</p>
 <p><img decoding="async" loading="lazy" src="https://ithelp.ithome.com.tw/upload/images/20231001/201489441ogwsQ29pj.png" alt="https://ithelp.ithome.com.tw/upload/images/20231001/201489441ogwsQ29pj.png" class="img_ev3q"></p>
 <p>就會顯示</p>
-<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">Resolved IP addresses of &quot;google.com&quot;: [&quot;142.250.207.14&quot;].</span><br></span></code></pre></div></div>
+<div class="language-text codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">Resolved IP addresses of &quot;google.com&quot;: [&quot;142.250.207.14&quot;].</span><br></span></code></pre></div></div>
 <p>對應 google.com 的 IP address 為 142.250.207.14</p>
 <br>
 <h4 class="anchor anchorTargetStickyNavbar_Vzrq" id="檢查-operating-system-的-dns-cache">檢查 Operating System 的 DNS cache<a href="#檢查-operating-system-的-dns-cache" class="hash-link" aria-label="Direct link to 檢查 Operating System 的 DNS cache" title="Direct link to 檢查 Operating System 的 DNS cache" translate="no">​</a></h4>
 <p>在本地作業系統中，也會緩存 DNS 的查找結果，我們可以在 terminal 輸入以下指令</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">nslookup &lt;your domain&gt;</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">nslookup &lt;your domain&gt;</span><br></span></code></pre></div></div>
 <p>例如</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">nslookup google.com</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_APcc theme-code-block" data-code-theme="dark" style="--prism-color:#cdd6f4;--prism-background-color:#1e1e2e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_qGQc thin-scrollbar" style="color:#cdd6f4;background-color:#1e1e2e"><code class="codeBlockLines_p187"><span class="token-line" style="color:#cdd6f4"><span class="token plain">nslookup google.com</span><br></span></code></pre></div></div>
 <br>
 <p>就會出現以下結果
 <img decoding="async" loading="lazy" src="https://ithelp.ithome.com.tw/upload/images/20231001/2014894404ppcgbZ9f.png" alt="https://ithelp.ithome.com.tw/upload/images/20231001/2014894404ppcgbZ9f.png" class="img_ev3q"></p>
@@ -85,7 +85,7 @@
 </li>
 <li class="">
 <p><strong>Address: 142.250.207.14</strong>:
-這是 <code>google.com</code> 網域名稱解析到的 IP 地址。當你在瀏覽器中輸入 <code>google.com</code> 時，你的電腦會使用這個 IP 地址來連接到 Google 的伺服器。</p>
+這是 <code>google.com</code> 網域名稱解析到的 IP 地址。當你在瀏覽器中輸入 <code>google.com</code> 時，你的電腦 會使用這個 IP 地址來連接到 Google 的伺服器。</p>
 </li>
 </ol>
 <br>
