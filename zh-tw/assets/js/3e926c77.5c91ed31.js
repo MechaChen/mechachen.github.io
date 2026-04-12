@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkbenson_doc=self.webpackChunkbenson_doc||[]).push([[3883],{8023:a=>{a.exports=JSON.parse('{"label":"hola","permalink":"/zh-tw/blog/tags/hola","allTagsPath":"/zh-tw/blog/tags","count":1}')}}]);
