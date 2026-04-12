@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkbenson_doc=globalThis.webpackChunkbenson_doc||[]).push([[5995],{81881(o){o.exports=JSON.parse('{"metadata":{"permalink":"/zh-tw/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":5,"blogDescription":"Blog","blogTitle":"Blog"}}')}}]);
